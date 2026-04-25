@@ -18,13 +18,13 @@ Payroll / Superannuation / HR Technology / FinTech
 
 # 用户画像
 
-# 谁是主要用户？
+## 谁是主要用户？
 
 主要用户是刚加入复杂业务系统项目的 junior developer、software engineer、technical support engineer，或者需要快速理解业务逻辑的技术团队成员。
 
 他们通常具备一定的编程能力，但对具体行业知识不熟悉，例如 payroll、superannuation、compliance reporting、HR/payroll integration 等业务背景。他们需要在较短时间内理解产品逻辑，并把业务规则正确转化为代码实现。
 
-# 他们的主要痛点是什么？
+## 他们的主要痛点是什么？
 
 他们的主要痛点是业务知识门槛高、信息分散、上下文难以快速建立。
 
@@ -34,7 +34,7 @@ Payroll / Superannuation / HR Technology / FinTech
 
 # 现有方案
 
-# 目前有哪些解决方案？
+## 目前有哪些解决方案？
 
 目前常见的解决方案包括：
 
@@ -44,7 +44,7 @@ Payroll / Superannuation / HR Technology / FinTech
 4. 参加 onboarding session 或 team knowledge sharing。
 5. 使用普通搜索工具或通用 AI chatbot 辅助理解概念。
 
-# 这些方案有什么不足？
+## 这些方案有什么不足？
 
 这些方案的问题是缺少统一、上下文相关、可追溯的知识入口。
 
