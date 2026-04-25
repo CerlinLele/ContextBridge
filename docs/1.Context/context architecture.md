@@ -57,6 +57,29 @@ In complex business systems, important knowledge is often distributed across mul
 
 For the MVP, the Retrieved Layer will focus on a limited but realistic knowledge base related to payroll, superannuation, HR technology, and system integration. The goal is not to build a complete enterprise knowledge system, but to test whether retrieved context can help ISA provide more accurate, grounded, and useful answers.
 
+### MVP Demo Knowledge Base
+
+For this project, I will not use confidential company documents from previous work. Instead, I will create a small synthetic demo knowledge base based on public domain concepts and simplified mock business rules. This approach keeps the project safe while still simulating the type of fragmented business context that developers often need to understand in real projects.
+
+The demo knowledge base will include five document types:
+
+1. Domain Glossary
+   A glossary explaining key terms such as payroll, superannuation, Single Touch Payroll, ATO, clearing house, contribution, validation, pay event, and reporting status.
+
+2. Workflow Document
+   A simplified payroll reporting workflow, such as employee payroll data collection, validation, submission, response handling, and status update.
+
+3. Mock API Specification
+   A mock API document for endpoints such as `POST /payroll/reports`, including request fields, response fields, validation errors, and status codes.
+
+4. Business Rules Document
+   A small set of demo rules, such as required fields, validation timing, missing data handling, submission status transitions, and retry behavior.
+
+5. FAQ / Onboarding Notes
+   Beginner-friendly notes for junior developers, including questions such as "What is STP?", "Why do we validate payroll data before submission?", and "What should a developer check before changing reporting logic?"
+
+These documents will be intentionally small, controlled, and easy to evaluate. They will be used to test whether ISA can retrieve the right context and explain complex business concepts without relying on private company materials.
+
 ### Knowledge Sources
 
 The Retrieved Layer may include the following types of sources:
@@ -68,7 +91,10 @@ The Retrieved Layer may include the following types of sources:
 5. User stories and development tickets.
 6. FAQ and onboarding materials.
 7. Glossaries for payroll, superannuation, and HR technology terms.
-8. Selected external references for general domain concepts.
+8. Public online resources for general domain concepts, such as official government pages, industry explainers, and public technical documentation.
+9. Selected external references for broader background knowledge.
+
+Public online resources will be used to support general understanding of domain concepts. They should not replace project-specific documentation, internal business rules, or expert verification for compliance-sensitive decisions.
 
 ### Retrieved Context Example
 
