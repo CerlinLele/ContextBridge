@@ -4,11 +4,11 @@
 
 在复杂业务系统开发中，开发者很难快速理解业务上下文，导致需求理解、功能实现和跨团队沟通成本较高。
 
-# 行业：
+## 行业：
 
 Payroll / Superannuation / HR Technology / FinTech
 
-# 问题描述：
+## 问题描述：
 
 在我之前参与 WRKR Pay 相关项目开发时，我发现业务背景非常复杂。系统不仅涉及普通的软件功能开发，还包含 payroll、superannuation、Single Touch Payroll、合规校验、HR/payroll 系统集成等多个业务领域。很多关键知识分散在产品文档、已有代码、业务规则、合规要求以及和同事的沟通中。
 
