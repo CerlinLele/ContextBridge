@@ -1,0 +1,47 @@
+[
+  {
+    "id": "stp_overview_001",
+    "source": "ATO Single Touch Payroll",
+    "source_url": "https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/single-touch-payroll/what-is-stp",
+    "type": "domain_glossary",
+    "title": "What is Single Touch Payroll?",
+    "content": "Single Touch Payroll, or STP, is an Australian payroll reporting process. Employers use STP-enabled payroll software to report payroll information such as salaries, wages, PAYG withholding, and superannuation information to the ATO when employees are paid.",
+    "use_case": "Explain STP to a junior developer working on a payroll reporting feature."
+  },
+  {
+    "id": "superstream_workflow_001",
+    "source": "ATO SuperStream for Employers",
+    "source_url": "https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/superstream-for-employers",
+    "type": "workflow_document",
+    "title": "SuperStream Contribution Workflow",
+    "content": "SuperStream is used to send superannuation contribution data and payments electronically. A payroll system may prepare employee super contribution data, link it with an electronic payment using a payment reference number, and send it to a super fund or clearing house.",
+    "use_case": "Explain how payroll data connects to super contribution payments."
+  },
+  {
+    "id": "super_due_date_rule_001",
+    "source": "ATO Super Payment Due Dates",
+    "source_url": "https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/super-payment-due-dates",
+    "type": "business_rule",
+    "title": "Quarterly Super Payment Due Dates",
+    "content": "Super guarantee payments must be received by the employee's super fund by the quarterly due date. Example due dates include 28 October for the July to September quarter, 28 January for the October to December quarter, 28 April for the January to March quarter, and 28 July for the April to June quarter.",
+    "use_case": "Test date-based validation or explain why super payment timing matters."
+  },
+  {
+    "id": "payslip_requirement_001",
+    "source": "Fair Work Ombudsman Pay Slips",
+    "source_url": "https://www.fairwork.gov.au/pay-and-wages/paying-wages/pay-slips",
+    "type": "business_rule",
+    "title": "Pay Slip Required Information",
+    "content": "A pay slip should include information such as the employer and employee name, pay period, payment date, gross pay, net pay, hourly rate details where applicable, deductions, and superannuation contribution details.",
+    "use_case": "Explain required payroll fields before designing a payslip model or validation rule."
+  },
+  {
+    "id": "mock_payroll_api_001",
+    "source": "Synthetic mock API based on public payroll concepts",
+    "source_url": null,
+    "type": "mock_api_spec",
+    "title": "POST /payroll/reports",
+    "content": "This mock endpoint submits a payroll reporting event. Required fields include employee_id, pay_period_start, pay_period_end, payment_date, gross_pay, net_pay, payg_withholding, super_liability_amount, and reporting_status. Possible validation errors include missing_payment_date, invalid_pay_period, missing_employee_id, and negative_gross_pay.",
+    "use_case": "Provide demo API context for ISA to explain how business rules map to backend validation."
+  }
+]
