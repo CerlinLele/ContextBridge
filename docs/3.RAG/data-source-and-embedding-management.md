@@ -1,0 +1,152 @@
+# Data Source and Embedding Management
+
+## Core Principle
+
+Manage data sources and embeddings separately.
+
+- Data sources are the source of truth.
+- Embeddings are generated index artifacts.
+
+Embeddings should be rebuildable from the original data sources. They should not be treated as the only copy of knowledge.
+
+## Recommended Directory Structure
+
+```text
+knowledge_base/
+  sources/          # Original files and source-of-truth knowledge
+    policies/
+    product/
+    faq/
+
+  manifests/        # Optional but recommended source registry
+    sources.json
+
+  processed/        # Cleaned text, useful for debugging
+  chunks/           # Split chunks, useful for debugging
+  indexes/          # Local vector indexes, such as FAISS or Chroma
+```
+
+For the first version, this is enough:
+
+```text
+knowledge_base/
+  sources/
+```
+
+Embeddings can be stored in a vector database or local vector store.
+
+## Data Source Management
+
+Each source should have metadata.
+
+Suggested source metadata:
+
+```text
+source_id
+source_path
+source_type
+title
+owner optional
+version
+content_hash
+last_modified_at
+ingested_at
+status
+```
+
+The most important field is `content_hash`.
+
+During ingestion:
+
+- If the hash has not changed, skip re-embedding.
+- If the hash has changed, regenerate chunks and embeddings.
+- If the source file was deleted, delete the related chunks and embeddings.
+
+This allows incremental ingestion instead of rebuilding everything every time.
+
+## Embedding Management
+
+Embeddings should be attached to chunks, not only to full documents.
+
+Suggested chunk and embedding metadata:
+
+```text
+chunk_id
+source_id
+chunk_index
+chunk_text
+embedding
+embedding_model
+content_hash
+metadata
+created_at
+```
+
+Store the `embedding_model` for every embedded chunk.
+
+Example:
+
+```text
+embedding_model = "text-embedding-3-small"
+```
+
+This matters because if the embedding model changes later, old embeddings should be rebuilt.
+
+## Recommended Ingestion Flow
+
+```text
+Scan knowledge_base/sources/
+-> calculate source metadata and content_hash
+-> compare with existing source registry
+-> detect new, updated, unchanged, and deleted sources
+-> chunk new or updated sources
+-> generate embeddings for chunks
+-> write chunks and embeddings to vector storage
+-> remove embeddings for deleted sources
+```
+
+## Git Tracking Guidance
+
+Recommended to track in Git:
+
+```text
+knowledge_base/sources/
+knowledge_base/manifests/
+```
+
+Usually not recommended to track in Git:
+
+```text
+knowledge_base/indexes/
+knowledge_base/processed/
+knowledge_base/chunks/
+```
+
+These are generated artifacts. They may become large and can become invalid after changing the chunking strategy or embedding model.
+
+Suggested `.gitignore` entries:
+
+```gitignore
+knowledge_base/indexes/
+knowledge_base/processed/
+knowledge_base/chunks/
+```
+
+## Recommended Rules
+
+- `knowledge_base/sources/` contains manually maintained original knowledge.
+- Vector storage contains embeddings.
+- `processed/` and `chunks/` are optional development and debugging outputs.
+- Embeddings should be rebuildable and should not be manually edited.
+- Use `content_hash` to support incremental updates.
+- Store `embedding_model` so model changes can trigger re-indexing.
+
+## Summary
+
+Keep original data, chunks, and vector indexes conceptually separate:
+
+```text
+Original source -> cleaned text -> chunks -> embeddings -> retrieval
+```
+
+This keeps the RAG pipeline easier to debug, rebuild, and evolve.
