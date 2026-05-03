@@ -2,37 +2,54 @@
 
 ## Recommendation
 
-Use Amazon Bedrock Knowledge Bases for the first version, then move to a more customized ingestion and retrieval pipeline only when more control is needed.
+Use a custom RAG pipeline on AWS with LlamaIndex for ingestion and parsing.
 
-V1 should prioritize a complete managed RAG loop:
+The main reason is flexibility: the application should be able to choose the embedding model and LLM model from configuration instead of being locked into one managed Bedrock Knowledge Base setup.
+
+Recommended V1 architecture:
 
 ```text
 S3 knowledge source
--> Bedrock Knowledge Base ingestion
--> embedding model
+-> ingestion worker
+-> LlamaIndex reader/parser
+-> LlamaIndex node/chunk pipeline
+-> selected embedding model
 -> vector store
--> application API
--> Bedrock foundation model
+-> retrieval API
+-> selected LLM model
 -> answer with citations
 ```
 
 Recommended V1 AWS services:
 
 ```text
-Amazon S3                      # Original knowledge source storage
-Amazon Bedrock Knowledge Bases # Managed RAG ingestion and retrieval
-Amazon Titan Embeddings V2     # Embedding model
-OpenSearch Serverless          # Vector store option
-S3 Vectors                     # Alternative vector store option
-Lambda / ECS / App Runner      # Application API runtime
-CloudWatch                     # Logs and metrics
-IAM + KMS                      # Permissions and encryption
+Amazon S3                 # Original knowledge source storage
+Lambda / ECS / App Runner # Ingestion worker and application API runtime
+DynamoDB                  # Source registry, ingestion runs, model profiles
+OpenSearch Serverless     # Primary vector store option
+Aurora PostgreSQL pgvector # Alternative if PostgreSQL is already used
+SQS / EventBridge         # Async ingestion trigger
+CloudWatch                # Logs and metrics
+IAM + KMS                 # Permissions and encryption
 ```
+
+Recommended framework components:
+
+```text
+LlamaIndex readers              # Load files into Documents
+LlamaIndex NodeParser           # Parse Documents into Nodes
+LlamaIndex IngestionPipeline    # Compose parsing, metadata, and embedding steps
+Provider adapters               # Bedrock / OpenAI / local model providers
+```
+
+Use Amazon Bedrock Knowledge Bases only as an optional managed path when speed matters more than parser, chunking, and model-control flexibility.
 
 References:
 
-- Amazon Bedrock Knowledge Bases: https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/knowledge-base.html
-- Create a Knowledge Base: https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-create.html
+- LlamaIndex Ingestion Pipeline: https://developers.llamaindex.ai/python/framework/module_guides/loading/ingestion_pipeline/
+- LlamaIndex Documents and Nodes: https://developers.llamaindex.ai/python/framework/module_guides/loading/documents_and_nodes/
+- LlamaIndex Transformations: https://developers.llamaindex.ai/python/framework/module_guides/loading/ingestion_pipeline/transformations/
+- Amazon Bedrock supported models and Regions: https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/knowledge-base-supported.html
 
 ## Phase 1: AWS Environment Planning
 
@@ -47,18 +64,77 @@ prod
 Choose the AWS Region based on:
 
 - User location
-- Bedrock model availability
-- Knowledge Bases support
+- Bedrock model availability, if using Bedrock-hosted models
 - Vector store support
 - Data residency requirements
+- Latency to model providers and users
 
-If the product is mainly used in Australia, start by checking `ap-southeast-2`, but confirm the selected embedding model, generation model, Knowledge Bases, and vector store are all supported in that Region.
+If the product is mainly used in Australia, start by checking `ap-southeast-2`, but confirm the selected embedding model, selected LLM model, and vector store are all supported in that Region.
 
-Reference:
+The system should not assume all models are available everywhere. Store model-provider and region compatibility in configuration.
 
-- Bedrock supported models and Regions: https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/knowledge-base-supported.html
+## Phase 2: Model Selection Strategy
 
-## Phase 2: Data Source Management with S3
+The RAG system should support selectable model profiles.
+
+Separate these choices:
+
+```text
+embedding model
+generation LLM
+optional reranker model
+optional parser mode
+```
+
+Example model profile:
+
+```json
+{
+  "profile_id": "dev-bedrock-titan-claude",
+  "embedding": {
+    "provider": "bedrock",
+    "model_id": "amazon.titan-embed-text-v2:0",
+    "dimension": 1024,
+    "region": "ap-southeast-2"
+  },
+  "llm": {
+    "provider": "bedrock",
+    "model_id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "region": "ap-southeast-2",
+    "temperature": 0.2,
+    "max_tokens": 1200
+  },
+  "parser": {
+    "framework": "llamaindex",
+    "node_parser": "SentenceSplitter",
+    "chunk_size": 800,
+    "chunk_overlap": 120
+  },
+  "retrieval": {
+    "top_k": 5
+  }
+}
+```
+
+The exact model IDs should be environment-specific. Do not hard-code them in ingestion or query business logic.
+
+Supported provider options can include:
+
+```text
+Bedrock embeddings + Bedrock LLM
+OpenAI embeddings + OpenAI LLM
+Cohere embeddings/reranker + Bedrock LLM
+Local embedding model + Bedrock/OpenAI LLM
+```
+
+Implementation rule:
+
+- Store `embedding_model`, `embedding_dimension`, and `embedding_provider` with every vector index.
+- Store `llm_model`, `llm_provider`, and prompt version with every answer trace.
+- Rebuild the vector index when the embedding model or embedding dimension changes.
+- Re-run evaluation when the LLM, prompt, parser, chunking, reranker, or retrieval settings change.
+
+## Phase 3: Data Source Management with S3
 
 Use S3 as the source-of-truth storage for production knowledge sources.
 
@@ -74,13 +150,15 @@ s3://contextbridge-kb-sources-dev/
     sources.json
 ```
 
-Recommended artifact bucket for custom ingestion later:
+Recommended artifact bucket:
 
 ```text
 s3://contextbridge-kb-artifacts-dev/
-  processed/
+  parsed/
+  nodes/
   chunks/
   failed/
+  reports/
 ```
 
 Separate source and artifact buckets are useful because ingestion jobs may generate outputs. If an S3 event triggers a function that writes back to the same bucket, it can accidentally create an event loop.
@@ -90,102 +168,167 @@ References:
 - S3 Event Notifications: https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html
 - S3 with Lambda: https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html
 
-## Phase 3: Vector Store Selection
+## Phase 4: Vector Store Selection
 
 Recommended V1 options:
 
 ```text
 OpenSearch Serverless
-S3 Vectors
+Aurora PostgreSQL + pgvector
 ```
 
 Use OpenSearch Serverless when:
 
 - Metadata filtering matters.
-- Search behavior needs to be more configurable.
+- Search behavior needs to be configurable.
 - Hybrid search may be needed later.
-- The team wants a common RAG vector search setup.
+- The team wants a common AWS-native RAG vector search setup.
 
-Use S3 Vectors when:
+Use Aurora PostgreSQL + pgvector when:
 
-- The system needs a lighter managed vector storage path.
-- Cost and scale for vectors matter.
-- Bedrock Knowledge Bases can manage the vector lifecycle.
+- The product already uses PostgreSQL.
+- Source metadata and relational app data need to live close together.
+- Operational simplicity matters more than specialized search features.
 
-AWS documentation describes S3 Vectors integration with Bedrock Knowledge Bases, where Bedrock reads source data, creates text blocks, generates embeddings, stores them in a vector index, and retrieves them during query time.
+Optional:
 
-Reference:
+```text
+S3 Vectors
+```
+
+Use S3 Vectors only if its query/filtering behavior fits the application and the team wants lighter managed vector storage. It is a better fit for simpler retrieval workflows than for highly customized ranking and filtering.
+
+References:
 
 - S3 Vectors with Bedrock Knowledge Bases: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-bedrock-kb.html
-
-Alternative:
-
-```text
-Aurora PostgreSQL + pgvector
-```
-
-This is a good option if the project already uses PostgreSQL and wants vectors close to relational metadata.
-
-Reference:
-
 - Aurora PostgreSQL as a Bedrock Knowledge Base vector store: https://docs.aws.amazon.com/en_us/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.VectorDB.html
 
-## Phase 4: Embedding Strategy
+## Phase 5: LlamaIndex Parser and Ingestion Design
 
-Recommended first embedding model:
+Use LlamaIndex for parsing and node creation instead of relying on Bedrock Knowledge Bases parsing.
+
+Core concepts:
 
 ```text
-Amazon Titan Text Embeddings V2
+source file
+-> LlamaIndex Document
+-> LlamaIndex NodeParser
+-> Nodes with metadata
+-> embeddings
+-> vector records
 ```
 
-Reasons:
+Default parser profile:
 
-- AWS-native
-- Works naturally with Bedrock
-- Supports selectable vector dimensions
+```text
+framework: llamaindex
+node_parser: SentenceSplitter
+chunk_size: 800
+chunk_overlap: 120
+include_metadata: true
+```
+
+Use parser profiles so the team can experiment safely:
+
+```json
+{
+  "parser_profile_id": "sentence-800-120-v1",
+  "framework": "llamaindex",
+  "reader": "file-type-specific",
+  "node_parser": "SentenceSplitter",
+  "chunk_size": 800,
+  "chunk_overlap": 120,
+  "metadata_extractors": ["title", "source_path"],
+  "version": 1
+}
+```
+
+Parser options to support later:
+
+```text
+SentenceSplitter             # Good default for normal text
+TokenTextSplitter            # More predictable token budgets
+HierarchicalNodeParser       # Parent/child retrieval
+SemanticSplitterNodeParser   # Semantic chunk boundaries
+custom parser                # Domain-specific parsing rules
+```
+
+Store these fields for every generated node:
+
+```text
+node_id
+source_id
+source_uri
+source_type
+content_hash
+parser_profile_id
+parser_version
+chunk_index
+chunk_text
+metadata
+created_at
+```
+
+If parser settings change, mark affected sources as `reindex_required`.
+
+## Phase 6: Embedding Strategy
+
+Do not pick a single fixed embedding model in the plan.
+
+Instead, define allowed embedding providers and model profiles:
+
+```text
+Bedrock Titan embeddings
+OpenAI text embeddings
+Cohere embeddings
+Local sentence-transformer style embeddings
+```
 
 Important values to store:
 
 ```text
+embedding_provider
 embedding_model
 embedding_dimension
+embedding_profile_id
 chunk_size
 chunk_overlap
+parser_profile_id
 vector_store
 index_name
 ingestion_version
 ```
 
-If the embedding model or vector dimension changes, the vector index should generally be rebuilt.
+The vector index is tied to one embedding profile. If a source needs to be indexed by multiple embedding models, create separate indexes or separate vector namespaces.
 
-Reference:
-
-- Bedrock supported embedding models: https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/knowledge-base-supported.html
-
-## Phase 5: Source Registry Design
-
-For V1, use an S3 JSON registry:
+Recommended naming:
 
 ```text
-s3://contextbridge-kb-sources-dev/manifests/sources.json
+rag-{env}-{embedding_provider}-{embedding_model_slug}-{dimension}
 ```
 
-For production, migrate to DynamoDB:
+Example:
+
+```text
+rag-dev-bedrock-titan-v2-1024
+rag-dev-openai-text-embedding-3-large-3072
+```
+
+## Phase 7: Source Registry Design
+
+For V1, use DynamoDB if possible. Use an S3 JSON registry only for the smallest prototype.
+
+Suggested DynamoDB tables:
 
 ```text
 rag_sources
 rag_ingestion_runs
 rag_documents
+rag_model_profiles
+rag_parser_profiles
 ```
 
-Suggested DynamoDB table:
-
-```text
-Table: rag_sources
-PK: source_id
-```
-
-Suggested fields:
+Suggested `rag_sources` fields:
 
 ```text
 source_id
@@ -198,11 +341,28 @@ status
 last_modified_at
 ingested_at
 chunk_count
+parser_profile_id
+embedding_profile_id
+vector_index_name
+metadata
+```
+
+Suggested `rag_model_profiles` fields:
+
+```text
+profile_id
+environment
+embedding_provider
 embedding_model
 embedding_dimension
-knowledge_base_id
-data_source_id
-metadata
+llm_provider
+llm_model
+llm_region
+temperature
+max_tokens
+is_default
+status
+created_at
 ```
 
 Suggested statuses:
@@ -213,47 +373,68 @@ active
 failed
 deleted
 reindex_required
+disabled
 ```
 
-## Phase 6: Ingestion Flow
+## Phase 8: Ingestion Flow
 
-### V1 Managed Flow
-
-Use Bedrock Knowledge Bases sync:
+Use an async custom ingestion flow.
 
 ```text
 Upload file to S3 raw/
--> update source registry
--> trigger Bedrock Knowledge Base sync
--> Bedrock parses document
--> Bedrock chunks content
--> Bedrock creates embeddings
--> Bedrock writes to vector store
-```
-
-Bedrock Knowledge Bases ingestion includes parsing, chunking, embedding, and writing to a vector index.
-
-Reference:
-
-- Turning data into a knowledge base: https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/kb-how-data.html
-
-### Later Custom Flow
-
-Use a custom pipeline when chunking, metadata, permissions, or retry behavior needs more control:
-
-```text
-S3 ObjectCreated
+-> S3 ObjectCreated event
 -> EventBridge / SQS
--> Lambda or ECS worker
--> extract text
--> clean text
--> chunk
--> call Bedrock embedding model
--> write vectors to OpenSearch / Aurora / S3 Vectors
+-> ingestion worker
+-> read source registry
+-> load active parser profile
+-> load active embedding profile
+-> parse with LlamaIndex
+-> generate embeddings with selected provider
+-> write vectors to OpenSearch / Aurora pgvector
+-> write artifacts and ingestion report
 -> update DynamoDB registry
 ```
 
-## Phase 7: Query API
+The ingestion worker should be idempotent:
+
+- Calculate a source `content_hash`.
+- Skip ingestion if the source hash and ingestion profile hash have not changed.
+- Mark the source as `reindex_required` if parser or embedding profile changes.
+- Write failed files to `failed/` with error details.
+
+Suggested ingestion profile hash input:
+
+```text
+source content hash
+parser profile id + version
+embedding profile id + model + dimension
+metadata extraction version
+```
+
+LlamaIndex ingestion can be modeled as:
+
+```python
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import SentenceSplitter
+
+parser = SentenceSplitter(
+    chunk_size=parser_config.chunk_size,
+    chunk_overlap=parser_config.chunk_overlap,
+)
+
+pipeline = IngestionPipeline(
+    transformations=[
+        parser,
+        embedding_model,
+    ]
+)
+
+nodes = pipeline.run(documents=documents)
+```
+
+Keep this as an architectural sketch. The production implementation should wrap provider-specific embedding clients behind an internal interface.
+
+## Phase 9: Query API
 
 Recommended application API:
 
@@ -261,6 +442,11 @@ Recommended application API:
 POST /rag/query
 GET /rag/sources
 POST /rag/sources/sync
+POST /rag/sources/reindex
+GET /rag/model-profiles
+PUT /rag/model-profiles/default
+GET /rag/parser-profiles
+PUT /rag/parser-profiles/default
 DELETE /rag/sources/{source_id}
 ```
 
@@ -269,7 +455,10 @@ Example query request:
 ```json
 {
   "question": "...",
-  "top_k": 5,
+  "model_profile_id": "prod-bedrock-titan-claude",
+  "retrieval": {
+    "top_k": 5
+  },
   "filters": {
     "category": "policies"
   }
@@ -281,45 +470,96 @@ Example query response:
 ```json
 {
   "answer": "...",
+  "model_profile_id": "prod-bedrock-titan-claude",
   "sources": [
     {
       "source_id": "...",
       "title": "...",
       "s3_key": "...",
-      "chunk_id": "...",
+      "node_id": "...",
       "score": 0.82
     }
   ]
 }
 ```
 
-With Bedrock Knowledge Bases, the application can either:
+Query flow:
 
-- Use retrieve-and-generate for the simplest path.
-- Retrieve chunks first, then compose its own prompt and call a Bedrock foundation model for more control.
+```text
+question
+-> load model profile
+-> embed query with selected embedding model
+-> vector search in matching index
+-> optional reranking
+-> compose prompt
+-> call selected LLM
+-> return answer and citations
+```
 
-## Phase 8: Security and Permissions
+Important rule:
+
+The query embedding model must match the embedding model used by the target vector index.
+
+## Phase 10: LLM Strategy
+
+The generation LLM should be selected at query time through a model profile.
+
+Supported LLM provider options can include:
+
+```text
+Bedrock Anthropic Claude
+Bedrock Amazon Nova
+OpenAI models
+local or private hosted models
+```
+
+Store these values per query:
+
+```text
+query_id
+model_profile_id
+llm_provider
+llm_model
+prompt_version
+retrieval_profile_id
+top_k
+latency
+token_usage
+answer_source_count
+```
+
+Prompt rules:
+
+- The model should answer only from retrieved context.
+- The model should cite source nodes.
+- The model should say it does not know when context is insufficient.
+- The model should not expose internal source paths unless the application allows it.
+
+## Phase 11: Security and Permissions
 
 Minimum requirements:
 
 ```text
 S3 bucket encryption with KMS
 IAM least privilege
-Bedrock service role scoped to target buckets and vector stores
 CloudWatch logs
 No public S3 access
 Separate dev/staging/prod environments
+Provider API keys stored in Secrets Manager
+Bedrock permissions scoped to selected models
+Vector store access scoped by environment and index
 ```
 
 Suggested app role permissions:
 
 ```text
-bedrock:Retrieve
-bedrock:RetrieveAndGenerate
+bedrock:InvokeModel for approved Bedrock models
 dynamodb:GetItem
 dynamodb:Query
 dynamodb:Scan
 s3:GetObject for approved metadata or source access only
+vector store read permissions
+secretsmanager:GetSecretValue for approved external provider keys
 ```
 
 Suggested ingestion role permissions:
@@ -327,22 +567,24 @@ Suggested ingestion role permissions:
 ```text
 s3:GetObject from source bucket
 s3:PutObject to artifact bucket
-bedrock:StartIngestionJob
+bedrock:InvokeModel for approved embedding models
 dynamodb:PutItem
 dynamodb:UpdateItem
-vector store write permissions if using a custom pipeline
+vector store write permissions
+secretsmanager:GetSecretValue for approved external provider keys
 ```
 
-## Phase 9: Observability
+## Phase 12: Observability
 
 Track these ingestion fields:
 
 ```text
-ingestion_job_id
+ingestion_run_id
 source_id
 content_hash
+parser_profile_id
+embedding_profile_id
 chunk_count
-embedding_model
 duration
 failure_reason
 ```
@@ -352,9 +594,11 @@ Track these query fields:
 ```text
 query_latency
 retrieval_scores
-model_latency
+embedding_model_latency
+llm_model_latency
 token_usage
 answer_source_count
+model_profile_id
 ```
 
 Recommended AWS tools:
@@ -366,7 +610,7 @@ AWS X-Ray optional
 CloudTrail for audit
 ```
 
-## Phase 10: Evaluation
+## Phase 13: Evaluation
 
 Create a fixed eval set:
 
@@ -379,8 +623,10 @@ should_answer true/false
 
 Run the eval set whenever changing:
 
+- Parser profile
 - Chunking strategy
 - Embedding model
+- LLM model
 - `top_k`
 - Reranking
 - Prompt
@@ -397,35 +643,43 @@ latency
 cost_per_query
 ```
 
+Compare model profiles with the same eval set before changing production defaults.
+
 ## Milestones
 
-### Milestone 1: AWS RAG MVP
+### Milestone 1: Flexible RAG MVP
 
 - Create S3 source bucket.
-- Create Bedrock Knowledge Base.
-- Choose OpenSearch Serverless or S3 Vectors.
-- Select one embedding model.
-- Run manual sync.
+- Create artifact bucket.
+- Create DynamoDB source registry.
+- Define one parser profile.
+- Define one embedding profile.
+- Define one LLM profile.
+- Build LlamaIndex ingestion worker.
+- Store vectors in OpenSearch Serverless or Aurora pgvector.
 - Build simple query API.
 
-### Milestone 2: Source Management
+### Milestone 2: Model and Parser Profiles
 
-- Add source registry in S3 or DynamoDB.
-- Track `content_hash`.
-- Track ingestion status.
-- Add source list API.
+- Add model profile CRUD.
+- Add parser profile CRUD.
+- Add default profile selection per environment.
+- Track profile IDs in ingestion and query traces.
+- Add validation so query embedding model matches the vector index.
 
 ### Milestone 3: Automated Ingestion
 
 - Add S3 events.
 - Add EventBridge or SQS.
 - Add Lambda or ECS worker.
-- Trigger automatic sync or reindexing.
+- Add idempotent ingestion based on content hash and profile hash.
+- Add reindex flow.
 
 ### Milestone 4: Production Hardening
 
 - Apply IAM least privilege.
 - Add KMS encryption.
+- Add Secrets Manager for external provider keys.
 - Add CloudWatch metrics.
 - Add retry and dead-letter queue.
 - Add eval set.
@@ -436,6 +690,7 @@ cost_per_query
 - Add metadata filters.
 - Add reranking.
 - Add hybrid search.
+- Add parent/child retrieval.
 - Add permission-aware retrieval.
 - Add multi-tenant separation if needed.
 
@@ -444,9 +699,11 @@ cost_per_query
 Start with:
 
 ```text
-S3 + Bedrock Knowledge Bases + OpenSearch Serverless or S3 Vectors
+S3 + DynamoDB + LlamaIndex ingestion/parser + OpenSearch Serverless or Aurora pgvector
 ```
 
-This gives the fastest path to a working RAG system on AWS.
+Use model profiles to choose the embedding model and LLM model.
 
-Move to a custom ingestion and retrieval pipeline only when Bedrock's managed chunking, metadata handling, or retrieval controls become limiting.
+Use parser profiles to choose the LlamaIndex parser and chunking strategy.
+
+This gives the project a flexible RAG foundation while still staying AWS-friendly for storage, security, observability, and deployment.
