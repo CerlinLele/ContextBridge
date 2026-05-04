@@ -207,6 +207,30 @@ Notes:
 2. It complements the GESB SAFF payroll data specification by showing an employer portal workflow rather than only field-level file structure.
 3. It is useful for testing parser behavior on PDFs with screenshots, step-by-step instructions, and operational guidance.
 
+### 12. ATO SuperStream Data and Payment Standards Guidance Notes
+
+URL: https://softwaredevelopers.ato.gov.au/SSTC/Guidance
+
+Use for:
+
+1. Official SuperStream guidance note index.
+2. Historical and current technical guidance around SuperStream implementation.
+3. Context for how ATO guidance complements MIGs and user guides.
+4. Finding SAFF-related historical guidance references.
+
+Suitable demo documents:
+
+1. SuperStream Guidance Index Notes.
+2. SAFF Guidance Background.
+3. Technical Guidance Summary.
+4. Implementation Context Notes.
+
+Notes:
+
+1. This page is an official ATO Software Developers guidance index, not a single SAFF file specification.
+2. It includes a historical `G015 SuperStream alternative file format guidance` entry and references an example alternative format file.
+3. It is useful for official context and traceability, while provider PDFs such as GESB and Mercer are better parser test sources.
+
 ## Suggested MVP Document Set
 
 For the first version of the Retrieved Layer, prepare a small and controlled document set:
@@ -231,6 +255,9 @@ For the first version of the Retrieved Layer, prepare a small and controlled doc
 
 7. `saff-upload-workflow-notes.md`
    Notes extracted from a public employer portal SAFF support guide, including upload workflow, operational steps, and common submission considerations.
+
+8. `superstream-guidance-index-notes.md`
+   Notes extracted from ATO SuperStream guidance notes, including how guidance notes relate to MIGs, user guides, and historical SAFF references.
 
 ## Usage Notes
 
