@@ -159,6 +159,54 @@ Suitable demo documents:
 2. Mock API Payloads.
 3. Test CSV / JSON Files.
 
+### 10. GESB SAFF Payroll Data Specification
+
+URL: https://www.gesb.wa.gov.au/__data/assets/pdf_file/0020/2675/superstream_payroll_data_specification.pdf
+
+Use for:
+
+1. SuperStream Alternative File Format examples.
+2. Payroll contribution file structure.
+3. Field-level validation and mapping examples.
+4. Complex PDF table parsing test cases.
+
+Suitable demo documents:
+
+1. SAFF File Format Notes.
+2. Field Mapping Reference.
+3. Parser Test PDF.
+4. Payroll Contribution Validation Rules.
+
+Notes:
+
+1. SAFF means SuperStream Alternative File Format.
+2. This is a fund-specific payroll data specification and should be used as public demo context, not as the only authoritative SuperStream reference.
+3. It is useful for testing structure-aware PDF parsing because the PDF contains specification sections, tables, and field-level rules.
+
+### 11. Mercer SAFF Support Guide - Employer Portal
+
+URL: https://www.mercerfinancialservices.com/content/dam/mercer/Aus/attachments/MST/MercerSpectrum/SAFF%20Support%20Guide%20-%20Employer%20Portal.pdf
+
+Use for:
+
+1. SAFF file upload workflow examples.
+2. Employer portal contribution submission context.
+3. Operational guidance around preparing and submitting SAFF files.
+4. Screenshot-heavy PDF parsing and retrieval test cases.
+
+Suitable demo documents:
+
+1. SAFF Upload Workflow Notes.
+2. Employer Portal Contribution Guide.
+3. Operational FAQ.
+4. Parser Test PDF.
+
+Notes:
+
+1. This is a provider-specific support guide and should be used as public demo context.
+2. It complements the GESB SAFF payroll data specification by showing an employer portal workflow rather than only field-level file structure.
+3. It is useful for testing parser behavior on PDFs with screenshots, step-by-step instructions, and operational guidance.
+
 ## Suggested MVP Document Set
 
 For the first version of the Retrieved Layer, prepare a small and controlled document set:
@@ -177,6 +225,12 @@ For the first version of the Retrieved Layer, prepare a small and controlled doc
 
 5. `developer-faq.md`
    Beginner-friendly onboarding notes for junior developers, including common questions about STP, validation, payroll reporting, and implementation risks.
+
+6. `saff-file-format-notes.md`
+   Notes extracted from a public SAFF payroll data specification, including contribution file structure, field mapping examples, and validation considerations.
+
+7. `saff-upload-workflow-notes.md`
+   Notes extracted from a public employer portal SAFF support guide, including upload workflow, operational steps, and common submission considerations.
 
 ## Usage Notes
 
