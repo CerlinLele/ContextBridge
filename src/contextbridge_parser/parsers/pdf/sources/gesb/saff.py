@@ -17,6 +17,10 @@ from typing import Any
 from pypdf import PdfReader
 
 from contextbridge_parser.parsers.pdf.common.pages import read_pdf_pages
+from contextbridge_parser.parsers.pdf.common.text import (
+    clean_text_lines,
+    normalize_space as _normalize_space,
+)
 
 
 PARSER_NAME = "gesb-saff-pdf"
@@ -523,17 +527,15 @@ def _quality_notes(pages: list[dict[str, Any]], field_rows: list[dict[str, Any]]
 
 
 def _clean_lines(lines: list[str]) -> list[str]:
-    cleaned = []
-    for line in lines:
-        value = _normalize_space(line)
-        if not value:
-            continue
-        if value == "Government Employees Superannuation Board (GESB)":
-            continue
-        if re.fullmatch(r"Page\s+\d+", value):
-            continue
-        cleaned.append(value)
-    return cleaned
+    return clean_text_lines(lines, keep_line=_is_gesb_content_line)
+
+
+def _is_gesb_content_line(line: str) -> bool:
+    if line == "Government Employees Superannuation Board (GESB)":
+        return False
+    if re.fullmatch(r"Page\s+\d+", line):
+        return False
+    return True
 
 
 def _parse_section_heading(line: str) -> tuple[str, str] | None:
@@ -592,10 +594,6 @@ def _strip_after_requirement_markers(text: str | None) -> str | None:
     index = _first_requirement_index(text)
     value = text[:index].strip() if index else text.strip()
     return _normalize_space(value) or None
-
-
-def _normalize_space(value: str) -> str:
-    return re.sub(r"\s+", " ", value).strip()
 
 
 def _sha256(path: Path) -> str:
