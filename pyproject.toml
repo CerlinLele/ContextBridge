@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-parse-gesb-saff-pdf = "contextbridge_parser.parsers.pdf.gesb_saff:main"
+parse-gesb-saff-pdf = "contextbridge_parser.parsers.pdf.sources.gesb.saff:main"
 
 [build-system]
 requires = ["setuptools>=69.0"]
