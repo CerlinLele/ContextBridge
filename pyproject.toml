@@ -1,0 +1,34 @@
+[project]
+name = "contextbridge-parser"
+version = "0.1.0"
+description = "ContextBridge document parsing and ingestion utilities."
+requires-python = ">=3.10"
+dependencies = [
+  "pypdf>=6.7.4",
+]
+
+[project.optional-dependencies]
+pdf = [
+  "pymupdf>=1.24.0",
+  "pdfplumber>=0.11.0",
+]
+ocr = [
+  "pytesseract>=0.3.10",
+]
+document-ai = [
+  "docling>=2.0.0",
+  "unstructured[pdf]>=0.16.0",
+]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+parse-gesb-saff-pdf = "contextbridge_parser.parsers.pdf.gesb_saff:main"
+
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
