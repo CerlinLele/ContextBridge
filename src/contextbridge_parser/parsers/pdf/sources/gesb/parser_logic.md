@@ -1,6 +1,6 @@
 # GESB SAFF PDF Parser Logic
 
-This document explains the parsing logic in `gesb_saff.py`.
+This document explains the parsing logic in `saff.py`.
 
 The current parser is a `pypdf` text extraction parser with GESB SAFF-specific
 rules. It is not a generic PDF parser and does not preserve real table cell

@@ -154,7 +154,7 @@ def build_dependency_trace(source_path: Path, outputs: list[Path]) -> dict[str, 
             "name": PARSER_NAME,
             "version": PARSER_VERSION,
             "profile": PARSER_PROFILE,
-            "module": "contextbridge_parser.parsers.pdf.gesb_saff",
+            "module": "contextbridge_parser.parsers.pdf.sources.gesb.saff",
         },
         "runtime": {
             "python": platform.python_version(),
