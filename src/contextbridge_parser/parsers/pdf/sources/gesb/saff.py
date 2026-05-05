@@ -17,6 +17,7 @@ from typing import Any
 from pypdf import PdfReader
 
 from contextbridge_parser.parsers.pdf.common.pages import read_pdf_pages
+from contextbridge_parser.parsers.pdf.common.sections import parse_numbered_section_heading
 from contextbridge_parser.parsers.pdf.common.text import (
     clean_text_lines,
     normalize_space as _normalize_space,
@@ -40,6 +41,7 @@ TABLE_PAGE_START = 10
 TABLE_PAGE_END = 27
 SAMPLE_PAGE_START = 28
 SAMPLE_PAGE_END = 34
+SECTION_HEADING_PREFIXES = tuple(f"{section}." for section in range(1, 13))
 
 
 @dataclass(frozen=True)
@@ -539,14 +541,10 @@ def _is_gesb_content_line(line: str) -> bool:
 
 
 def _parse_section_heading(line: str) -> tuple[str, str] | None:
-    match = re.match(r"^(?P<number>\d+(?:\.\d+)*\.?)\s+(?P<title>.+)$", line)
-    if not match:
-        return None
-    number = match.group("number")
-    title = match.group("title").strip()
-    if number.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10.", "11.", "12.")):
-        return number, title
-    return None
+    return parse_numbered_section_heading(
+        line,
+        allowed_prefixes=SECTION_HEADING_PREFIXES,
+    )
 
 
 def _is_table_header_line(line: str) -> bool:
