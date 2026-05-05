@@ -68,10 +68,13 @@ true table cells.
 
 ## Section Chunk Extraction
 
-`_extract_section_chunks()` extracts section summaries from the first 9 pages:
+`_extract_section_chunks()` extracts section summaries from the body summary
+pages, excluding the change history, key references, and table of contents:
 
 ```python
-section_chunks = _extract_section_chunks(pages[:9])
+section_chunks = _extract_section_chunks(
+    _page_range(pages, SECTION_SUMMARY_PAGE_START, SECTION_SUMMARY_PAGE_END)
+)
 ```
 
 The logic is:
@@ -278,7 +281,7 @@ output paths
 For the current GESB SAFF PDF, the existing parsed artifact contains:
 
 ```text
-section_chunks: 62
+section_chunks: 11
 field_rows: 141
 sample_pages: 7
 ```

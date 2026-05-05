@@ -39,6 +39,8 @@ DEFAULT_OUTPUT_DIR = Path(
 
 TABLE_PAGE_START = 10
 TABLE_PAGE_END = 27
+SECTION_SUMMARY_PAGE_START = 6
+SECTION_SUMMARY_PAGE_END = 9
 SAMPLE_PAGE_START = 28
 SAMPLE_PAGE_END = 34
 SECTION_HEADING_PREFIXES = tuple(f"{section}." for section in range(1, 13))
@@ -62,7 +64,9 @@ def parse_gesb_saff_pdf(source_path: Path) -> dict[str, Any]:
         parse_section_heading=_parse_section_heading,
     )
     field_rows = _extract_field_rows(pages)
-    section_chunks = _extract_section_chunks(pages[:9])
+    section_chunks = _extract_section_chunks(
+        _page_range(pages, SECTION_SUMMARY_PAGE_START, SECTION_SUMMARY_PAGE_END)
+    )
     sample_pages = _extract_sample_page_notes(pages)
 
     return {
@@ -214,6 +218,18 @@ def _extract_section_chunks(pages: list[dict[str, Any]]) -> list[dict[str, Any]]
         chunks.append(_finalize_section_chunk(current))
 
     return chunks
+
+
+def _page_range(
+    pages: list[dict[str, Any]],
+    start_page: int,
+    end_page: int,
+) -> list[dict[str, Any]]:
+    return [
+        page
+        for page in pages
+        if start_page <= page["page_number"] <= end_page
+    ]
 
 
 def _finalize_section_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
