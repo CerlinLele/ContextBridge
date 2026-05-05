@@ -16,6 +16,8 @@ from typing import Any
 
 from pypdf import PdfReader
 
+from contextbridge_parser.parsers.pdf.common.pages import read_pdf_pages
+
 
 PARSER_NAME = "gesb-saff-pdf"
 PARSER_VERSION = "0.1.0"
@@ -48,7 +50,11 @@ def parse_gesb_saff_pdf(source_path: Path) -> dict[str, Any]:
     source_path = source_path.resolve()
     reader = PdfReader(str(source_path))
     metadata = _read_metadata(reader)
-    pages = _read_pages(reader)
+    pages = read_pdf_pages(
+        reader,
+        clean_lines=_clean_lines,
+        parse_section_heading=_parse_section_heading,
+    )
     field_rows = _extract_field_rows(pages)
     section_chunks = _extract_section_chunks(pages[:9])
     sample_pages = _extract_sample_page_notes(pages)
@@ -172,32 +178,6 @@ def _read_metadata(reader: PdfReader) -> dict[str, Any]:
     for key, value in metadata.items():
         normalized[str(key).lstrip("/").lower()] = str(value)
     return normalized
-
-
-def _read_pages(reader: PdfReader) -> list[dict[str, Any]]:
-    pages = []
-    for index, page in enumerate(reader.pages, start=1):
-        raw_text = page.extract_text() or ""
-        lines = _clean_lines(raw_text.splitlines())
-        media_box = page.mediabox
-        width = float(media_box.width)
-        height = float(media_box.height)
-        pages.append(
-            {
-                "page_number": index,
-                "document_page_label": _document_page_label(lines),
-                "width": width,
-                "height": height,
-                "orientation": "landscape" if width > height else "portrait",
-                "rotation": int(page.get("/Rotate", 0)),
-                "text_char_count": len(raw_text),
-                "image_count": _image_count(page),
-                "section_headings": _section_headings(lines),
-                "text": "\n".join(lines),
-                "lines": lines,
-            }
-        )
-    return pages
 
 
 def _extract_section_chunks(pages: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -556,15 +536,6 @@ def _clean_lines(lines: list[str]) -> list[str]:
     return cleaned
 
 
-def _section_headings(lines: list[str]) -> list[dict[str, str]]:
-    headings = []
-    for line in lines:
-        parsed = _parse_section_heading(line)
-        if parsed:
-            headings.append({"section_number": parsed[0], "section_title": parsed[1]})
-    return headings
-
-
 def _parse_section_heading(line: str) -> tuple[str, str] | None:
     match = re.match(r"^(?P<number>\d+(?:\.\d+)*\.?)\s+(?P<title>.+)$", line)
     if not match:
@@ -573,14 +544,6 @@ def _parse_section_heading(line: str) -> tuple[str, str] | None:
     title = match.group("title").strip()
     if number.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10.", "11.", "12.")):
         return number, title
-    return None
-
-
-def _document_page_label(lines: list[str]) -> str | None:
-    for line in lines:
-        match = re.fullmatch(r"Page\s+\d+", line)
-        if match:
-            return line
     return None
 
 
@@ -603,20 +566,6 @@ def _is_table_header_line(line: str) -> bool:
 
 def _is_numbered_value_line(body: str) -> bool:
     return body.lstrip().startswith(("-", "–", "—"))
-
-
-def _image_count(page: Any) -> int:
-    resources = page.get("/Resources") or {}
-    xobjects = resources.get("/XObject") or {}
-    count = 0
-    for item in xobjects.values():
-        try:
-            obj = item.get_object()
-        except Exception:
-            continue
-        if obj.get("/Subtype") == "/Image":
-            count += 1
-    return count
 
 
 def _detect_document_version(pages: list[dict[str, Any]]) -> str | None:
