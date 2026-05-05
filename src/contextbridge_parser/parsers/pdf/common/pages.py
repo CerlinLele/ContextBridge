@@ -46,6 +46,20 @@ def read_pdf_pages(
     return pages
 
 
+def page_range(
+    pages: list[dict[str, Any]],
+    start_page: int,
+    end_page: int,
+) -> list[dict[str, Any]]:
+    """Return pages whose 1-based page number is within the inclusive range."""
+
+    return [
+        page
+        for page in pages
+        if start_page <= page["page_number"] <= end_page
+    ]
+
+
 def _section_headings(
     lines: list[str],
     parse_section_heading: SectionHeadingParser,

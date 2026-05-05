@@ -16,7 +16,7 @@ from typing import Any
 
 from pypdf import PdfReader
 
-from contextbridge_parser.parsers.pdf.common.pages import read_pdf_pages
+from contextbridge_parser.parsers.pdf.common.pages import page_range, read_pdf_pages
 from contextbridge_parser.parsers.pdf.common.sections import parse_numbered_section_heading
 from contextbridge_parser.parsers.pdf.common.text import (
     clean_text_lines,
@@ -65,7 +65,7 @@ def parse_gesb_saff_pdf(source_path: Path) -> dict[str, Any]:
     )
     field_rows = _extract_field_rows(pages)
     section_chunks = _extract_section_chunks(
-        _page_range(pages, SECTION_SUMMARY_PAGE_START, SECTION_SUMMARY_PAGE_END)
+        page_range(pages, SECTION_SUMMARY_PAGE_START, SECTION_SUMMARY_PAGE_END)
     )
     sample_pages = _extract_sample_page_notes(pages)
 
@@ -218,18 +218,6 @@ def _extract_section_chunks(pages: list[dict[str, Any]]) -> list[dict[str, Any]]
         chunks.append(_finalize_section_chunk(current))
 
     return chunks
-
-
-def _page_range(
-    pages: list[dict[str, Any]],
-    start_page: int,
-    end_page: int,
-) -> list[dict[str, Any]]:
-    return [
-        page
-        for page in pages
-        if start_page <= page["page_number"] <= end_page
-    ]
 
 
 def _finalize_section_chunk(chunk: dict[str, Any]) -> dict[str, Any]:

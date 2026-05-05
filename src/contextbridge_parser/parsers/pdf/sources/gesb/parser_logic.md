@@ -73,7 +73,7 @@ pages, excluding the change history, key references, and table of contents:
 
 ```python
 section_chunks = _extract_section_chunks(
-    _page_range(pages, SECTION_SUMMARY_PAGE_START, SECTION_SUMMARY_PAGE_END)
+    page_range(pages, SECTION_SUMMARY_PAGE_START, SECTION_SUMMARY_PAGE_END)
 )
 ```
 
