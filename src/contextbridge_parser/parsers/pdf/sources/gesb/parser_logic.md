@@ -34,7 +34,9 @@ quality_notes
 
 ## Page Reading
 
-`_read_pages()` uses `pypdf.PdfReader` to inspect every page.
+`read_pdf_pages()` from `pdf/common/pages.py` uses `pypdf.PdfReader` to inspect
+every page. The GESB parser passes in its own line cleaner and section heading
+parser so source-specific rules stay in `saff.py`.
 
 For each page, it records:
 
