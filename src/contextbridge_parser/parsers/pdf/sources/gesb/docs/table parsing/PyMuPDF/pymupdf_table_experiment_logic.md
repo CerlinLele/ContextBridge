@@ -143,6 +143,37 @@ DES
 
 都出现在同一视觉行附近。
 
+这个方法的目标是生成后续解析需要的 layout：
+
+```python
+{
+    "x_ranges": x_ranges,
+    "table_data_y_min": table_data_y_min,
+    "source": "header_words" or "fallback",
+}
+```
+
+其中：
+
+```text
+x_ranges: 每一列的 x 坐标范围
+table_data_y_min: 表格数据区开始的 y 坐标
+source: 这个 layout 是从表头推导出来的，还是使用 fallback 默认值
+```
+
+如果 `_find_header_words(words)` 没有找到完整表头，方法会直接返回 fallback layout：
+
+```python
+return {
+    "x_ranges": DEFAULT_X_RANGES,
+    "table_data_y_min": DEFAULT_TABLE_DATA_Y_MIN,
+    "source": "fallback",
+}
+```
+
+这意味着当前页没有可靠的表头坐标时，后续所有列判断都会依赖硬编码的
+`DEFAULT_X_RANGES`。这能保证脚本继续运行，但准确性通常不如从当前页表头动态推导。
+
 如果找到了表头，就根据这些 header word 的 `x0` 动态计算每一列的 x 范围：
 
 ```text
@@ -174,6 +205,52 @@ Value(s): VERSION
 
 如果找不到表头，就使用 `DEFAULT_X_RANGES` 里的硬编码坐标范围，并把布局来源
 标记为 `fallback`。
+
+更具体地说，方法会先读取每个关键表头 word 的左边界坐标：
+
+```python
+column_x = header["Column"]["x0"]
+field_x = header["Field"]["x0"]
+description_x = header["Description"]["x0"]
+requirements_x = header["Requirements"]["x0"]
+required_x = header["Required"]["x0"]
+mig_x = header["MIG"]["x0"]
+des_x = header["DES"]["x0"]
+```
+
+然后用这些 header `x0` 推导列边界：
+
+```python
+x_ranges = {
+    "column_number": (max(0.0, column_x - 12.0), field_x - 5.0),
+    "field_name": (field_x - 5.0, description_x - 5.0),
+    "description": (description_x - 5.0, requirements_x - 5.0),
+    "requirements_label": (requirements_x - 5.0, requirements_x + 58.0),
+    "requirements_value": (requirements_x + 58.0, required_x - 8.0),
+    "required_by_gesb": (required_x - 5.0, mig_x - 2.0),
+    "mig_reference": (mig_x - 2.0, des_x - 2.0),
+    "des_reference": (des_x - 2.0, des_x + 80.0),
+}
+```
+
+这些 `-5.0`、`+58.0`、`-8.0`、`+80.0` 是经验偏移量，用来把 header
+word 的左边界扩展成实际 cell 范围。它不是通用 PDF 表格算法，而是针对当前
+GESB SAFF 表格布局调出来的规则。
+
+`table_data_y_min` 使用：
+
+```python
+header["Column"]["y0"] + 10.0
+```
+
+也就是从表头行下方开始识别数据行，避免把表头文字本身当成 row start 或 row content。
+
+这个方法的价值是：如果每页表头位置有轻微偏移，脚本可以按当前页真实表头动态计算
+列范围，而不是完全依赖固定坐标。
+
+它的风险是：当某页没有完整表头，或表头被 PyMuPDF 拆分得不符合预期时，会退回
+fallback。fallback 页更容易出现漏行、串列或表头污染，所以后续优化可以考虑复用上一页
+成功检测到的 `header_words` layout，而不是立即使用 `DEFAULT_X_RANGES`。
 
 ## Row Start Detection
 
