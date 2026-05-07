@@ -76,7 +76,54 @@ line_no
 word_no
 ```
 
+`page.get_text("words", sort=True)` 返回的每一项是一个 tuple：
+
+```text
+(x0, y0, x1, y1, text, block_no, line_no, word_no)
+```
+
+`_page_words()` 本身不做业务解析，只是把 PyMuPDF 的 tuple 转成更容易读取和调试的 dict：
+
+```python
+{
+    "x0": x0,
+    "y0": y0,
+    "x1": x1,
+    "y1": y1,
+    "text": text,
+    "block_no": block_no,
+    "line_no": line_no,
+    "word_no": word_no,
+}
+```
+
+字段含义：
+
+```text
+x0: word 左边界 x 坐标
+y0: word 上边界 y 坐标
+x1: word 右边界 x 坐标
+y1: word 下边界 y 坐标
+text: word 文本
+block_no: PyMuPDF 识别出的文本块编号
+line_no: 文本块里的行编号
+word_no: 当前行里的 word 编号
+```
+
+`sort=True` 让 PyMuPDF 尽量按页面阅读顺序返回 words，但后续逻辑不能只依赖阅读顺序。
+这个实验真正依赖的是每个 word 的坐标。
+
 后续所有行、列、cell 的判断都主要依赖这些坐标。
+
+具体来说：
+
+```text
+判断 word 属于哪一列: 看 x0 落在哪个 x range
+判断 word 属于哪一行: 看 y0 和 row boundary
+判断是否是 row start: 看 text 是否是数字，以及 x0/y0 是否符合表格行特征
+判断 Requirements label/value: 看 x0 是否落在 requirements_label 或 requirements_value 范围
+重组多行文本: 按 y0 和 x0 排序后拼接
+```
 
 ## Layout Detection
 
@@ -273,4 +320,3 @@ _page_words()
 ->_extract_rows_from_words()
 ->_build_row()
 ```
-
