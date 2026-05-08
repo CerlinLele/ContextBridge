@@ -520,6 +520,59 @@ Notes
 page.find_tables().tables
 ```
 
+这个函数的作用是把 PyMuPDF 自带 `find_tables()` 识别出来的表格结果整理成摘要，
+方便放进实验 JSON 里做对照分析。
+
+它的核心逻辑是：
+
+```python
+def _find_tables_summary(page: fitz.Page) -> list[dict[str, Any]]:
+    tables = []
+    for table_index, table in enumerate(page.find_tables().tables):
+        extracted = table.extract()
+        tables.append(
+            {
+                "table_index": table_index,
+                "bbox": _round_rect(table.bbox),
+                "row_count": table.row_count,
+                "col_count": table.col_count,
+                "preview_rows": extracted[:6],
+            }
+        )
+    return tables
+```
+
+`page.find_tables()` 会让 PyMuPDF 根据页面中的线条、边框、矩形、文本对齐等布局信号，
+尝试识别表格区域。`tables` 是当前页识别出的 table 列表。
+
+对每个 table，脚本会调用：
+
+```python
+extracted = table.extract()
+```
+
+`extract()` 返回一个二维数组，表示 PyMuPDF 识别到的表格 cell 内容。例如：
+
+```python
+[
+    ["1", "Version", "Heading text", "", "Mandatory:", "Yes", "No", "N/A", "N/A"],
+    ["", "", "", "", "Data Type:", "String", "", "", ""],
+]
+```
+
+最终保存的摘要字段包括：
+
+```text
+table_index: 当前页第几个被 PyMuPDF 识别出的 table
+bbox: table 边界框，格式是 [x0, y0, x1, y1]
+row_count: PyMuPDF 识别出的行数
+col_count: PyMuPDF 识别出的列数
+preview_rows: table.extract() 的前 6 行，用于快速预览识别效果
+```
+
+`bbox` 会通过 `_round_rect(table.bbox)` 做三位小数 rounding，避免 JSON 里出现过长的
+浮点数。
+
 但它的结果只写入 `pages[].pymupdf_find_tables`，作为实验对照信息：
 
 ```text
@@ -531,6 +584,26 @@ preview_rows
 ```
 
 这个脚本没有直接依赖 `find_tables()` 的结果来构建最终 `rows`。
+
+主 row 构建路径仍然是：
+
+```text
+_page_words()
+->_detect_table_layout()
+->_find_row_starts()
+->_extract_rows_from_words()
+->_build_row()
+```
+
+因此 `_find_tables_summary()` 更像一个 diagnostic snapshot。它回答的问题是：
+
+```text
+PyMuPDF 自带 find_tables() 在当前页看到了哪些表格？
+这些表格的 bbox、行数、列数是多少？
+前几行内容看起来是否正确？
+它有没有漏掉外层 field rows？
+它是否能正确拆分 Requirements nested table？
+```
 
 原因是默认 `find_tables()` 在 SAFF PDF 上不完整：它能很好拆开某些
 `Requirements` 嵌套表格，但会漏掉部分外层 field rows。因此主逻辑选择直接
