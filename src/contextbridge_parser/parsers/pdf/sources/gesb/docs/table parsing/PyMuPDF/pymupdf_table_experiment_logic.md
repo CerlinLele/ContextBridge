@@ -595,11 +595,83 @@ column numbers，都可能和这里的 row boundary 策略有关。
 
 `_build_row()` 会把 row words 按 `x0` 分配到对应 cell。
 
+这个函数是从“坐标分组”转换到“结构化业务 row”的关键步骤。它接收
+`_extract_rows_from_words()` 切出来的一行 words，然后根据列坐标范围组装成最终 row dict。
+
+函数签名是：
+
+```python
+def _build_row(
+    page_number: int,
+    row_start: dict[str, Any],
+    next_y: float,
+    row_words: list[dict[str, Any]],
+    x_ranges: dict[str, tuple[float, float]],
+) -> dict[str, Any]:
+```
+
+输入含义：
+
+```text
+page_number: 当前页码
+row_start: 当前行第一列的数字 word，例如 column number 23
+next_y: 当前行结束 y 坐标
+row_words: 当前行 y 范围内的所有 words
+x_ranges: 当前页每一列的 x 坐标范围
+```
+
+它先建立一个按列名收集 words 的容器：
+
+```python
+cells: dict[str, list[dict[str, Any]]] = defaultdict(list)
+```
+
+然后遍历当前行的每个 word，根据 `word["x0"]` 判断它属于哪一列：
+
+```python
+for word in row_words:
+    cell_name = _cell_name_for_x(word["x0"], x_ranges)
+    if cell_name:
+        cells[cell_name].append(word)
+```
+
 分配逻辑在 `_cell_name_for_x()`：
 
 ```text
 如果 min_x <= word.x0 < max_x
 就把 word 放入对应列
+```
+
+也就是说，`_build_row()` 本身不直接硬编码每一列的位置，而是依赖前面
+`_detect_table_layout()` 生成的 `x_ranges`。
+
+`Requirements` 列会被特殊处理：
+
+```python
+requirement_lines = _requirements_lines(
+    cells["requirements_label"], cells["requirements_value"]
+)
+```
+
+原因是 `Requirements` 在视觉上不是一个普通长文本列，而是一个嵌套 key-value
+结构。例如：
+
+```text
+Mandatory:    Yes
+Data Type:    String
+Length:       7
+Value(s):     VERSION
+```
+
+所以 `_build_row()` 不直接把 `requirements_label` 和 `requirements_value` 简单拼接，
+而是交给 `_requirements_lines()` 按 y 坐标配对，生成：
+
+```python
+[
+    {"label": "Mandatory:", "value": "Yes"},
+    {"label": "Data Type:", "value": "String"},
+    {"label": "Length:", "value": "7"},
+]
 ```
 
 最终 row 输出字段包括：
@@ -617,6 +689,67 @@ required_by_gesb
 mig_reference
 des_reference
 raw_text
+```
+
+这些字段的来源是：
+
+```python
+return {
+    "page_number": page_number,
+    "bbox": _round_rect(
+        (
+            min((word["x0"] for word in row_words), default=row_start["x0"]),
+            row_start["y0"],
+            max((word["x1"] for word in row_words), default=row_start["x1"]),
+            next_y,
+        )
+    ),
+    "column_number": _first_int(_join_words(cells["column_number"])),
+    "field_name": _join_words(cells["field_name"]),
+    "description": _join_words(cells["description"]),
+    "requirements_text": _join_requirement_lines(requirement_lines),
+    "requirements_lines": requirement_lines,
+    "requirements": _requirements_dict(requirement_lines),
+    "required_by_gesb": _join_words(cells["required_by_gesb"]),
+    "mig_reference": _join_words(cells["mig_reference"]),
+    "des_reference": _join_words(cells["des_reference"]),
+    "raw_text": _join_words(row_words),
+}
+```
+
+关键字段说明：
+
+```text
+bbox: 当前 row 的边界框，格式是 [x0, y0, x1, y1]
+column_number: 从 column_number cell 文本中提取第一个整数
+field_name: field_name cell 的 words 拼接
+description: description cell 的 words 拼接
+requirements_text: requirements label/value 拼成的一段文本
+requirements_lines: requirements 的 label/value 行数组
+requirements: normalized requirements dict
+required_by_gesb: Required by GESB? 列文本
+mig_reference: MIG 2.0 Reference 列文本
+des_reference: DES Spec 5.8 Reference 列文本
+raw_text: 当前 row 所有 words 的拼接，用于调试
+```
+
+`bbox` 的计算方式是：
+
+```text
+x0: row_words 里的最小 x0，找不到时使用 row_start.x0
+y0: row_start.y0
+x1: row_words 里的最大 x1，找不到时使用 row_start.x1
+y1: next_y
+```
+
+这个函数的风险是：
+
+```text
+如果 x_ranges 不准，word 会被分到错误列
+如果 row_words 已经混入 header、section heading 或 footer，_build_row() 会照单全收
+如果 word.x0 贴近列边界，可能被分到相邻列
+Requirements label/value 依赖 y 坐标配对，多行 value 或错位时可能拼错
+_join_words() 按 (y0, x0) 排序拼接，对复杂换行不一定完美
 ```
 
 ## Requirements Parsing
