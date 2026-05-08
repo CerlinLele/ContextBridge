@@ -143,6 +143,70 @@ DES
 
 都出现在同一视觉行附近。
 
+`_find_header_words(words)` 的职责不是解析表格内容，而是判断当前页是否有一行
+看起来像 GESB SAFF 表格表头。它先找候选的 `Column` word：
+
+```python
+column_candidates = [
+    word
+    for word in words
+    if word["text"] == "Column" and word["x0"] < 80.0 and 40.0 <= word["y0"] <= 160.0
+]
+```
+
+这些条件表达了几个页面布局假设：
+
+```text
+text == "Column": 表头第一列的文字必须是 Column
+x0 < 80.0: 真正的表头 Column 应该在页面左侧
+40.0 <= y0 <= 160.0: 表头应该在页面上方区域，而不是正文中间或页脚
+```
+
+找到候选 `Column` 后，它会取同一视觉行附近的 words：
+
+```python
+same_line = [
+    word for word in words if abs(word["y0"] - column_word["y0"]) <= 5.0
+]
+```
+
+这里的 `5.0` 是 y 坐标容忍度。PDF 中同一视觉行的多个 word 不一定有完全相同的
+`y0`，所以需要允许少量上下偏差。
+
+然后它在 `same_line` 里查找其他关键表头：
+
+```python
+for text in ("Field", "Description", "Requirements", "Required", "MIG", "DES"):
+    matches = [word for word in same_line if word["text"] == text]
+    if matches:
+        header[text] = matches[0]
+```
+
+只有当所有关键表头都存在时，才返回 header dict：
+
+```python
+{
+    "Column": column_word,
+    "Field": field_word,
+    "Description": description_word,
+    "Requirements": requirements_word,
+    "Required": required_word,
+    "MIG": mig_word,
+    "DES": des_word,
+}
+```
+
+这些返回值仍然是 `_page_words()` 生成的 word dict，所以每个表头都带有
+`x0/y0/x1/y1/text` 等坐标信息。`_detect_table_layout()` 后面正是使用这些
+header word 的 `x0` 来推导各列的 x range。
+
+如果没有找到完整表头，`_find_header_words(words)` 会返回 `None`。这会导致
+`_detect_table_layout()` 进入 fallback 分支，使用 `DEFAULT_X_RANGES`。
+
+这个规则的风险是：如果某页没有重复表头、表头跨行、表头文字被 PyMuPDF 拆分方式
+和预期不同，或者表头 y 坐标超出 `40.0` 到 `160.0` 的范围，它就会失败。失败后
+后续解析仍然可以运行，但更容易出现漏行、串列或 header contamination。
+
 这个方法的目标是生成后续解析需要的 layout：
 
 ```python
@@ -236,6 +300,98 @@ x_ranges = {
 这些 `-5.0`、`+58.0`、`-8.0`、`+80.0` 是经验偏移量，用来把 header
 word 的左边界扩展成实际 cell 范围。它不是通用 PDF 表格算法，而是针对当前
 GESB SAFF 表格布局调出来的规则。
+
+这些数字有两类来源。
+
+第一类是 PyMuPDF 从当前页真实 word layer 里读出来的表头坐标：
+
+```python
+column_x = header["Column"]["x0"]
+field_x = header["Field"]["x0"]
+description_x = header["Description"]["x0"]
+requirements_x = header["Requirements"]["x0"]
+required_x = header["Required"]["x0"]
+mig_x = header["MIG"]["x0"]
+des_x = header["DES"]["x0"]
+```
+
+这些值不是手写的。它们来自页面上表头文字的左边界坐标。例如 `field_x` 是
+`Field` 这个 word 的 `x0`。
+
+第二类是人工调出来的 buffer / padding：
+
+```text
+-12.0
+-5.0
++58.0
+-8.0
+-2.0
++80.0
+```
+
+这些值用于把“表头文字的左边界”转换成“整列 cell 的有效范围”。
+
+例如：
+
+```python
+"field_name": (field_x - 5.0, description_x - 5.0)
+```
+
+含义是：
+
+```text
+field_name 列从 Field 表头左边界稍微往左 5pt 开始
+field_name 列到 Description 表头左边界稍微往左 5pt 结束
+```
+
+这样做是因为实际 cell 内容不一定和表头文字完全左对齐，给一点 buffer 可以减少
+贴边 word 被分到错误列的概率。
+
+`Requirements` 的 `+58.0` 更特殊：
+
+```python
+"requirements_label": (requirements_x - 5.0, requirements_x + 58.0)
+"requirements_value": (requirements_x + 58.0, required_x - 8.0)
+```
+
+这里不是切外层表格列，而是在 `Requirements` 这一大列内部再切出 label/value
+两个子列：
+
+```text
+Mandatory:    Yes
+Data Type:    String
+Length:       7
+Value(s):     VERSION
+```
+
+因此 `requirements_x + 58.0` 代表当前实验中观察到的 label/value 分界线。
+
+这些数字通常是通过以下方式逐步确定的：
+
+```text
+查看 page.get_text("words") 输出的 x0/y0 坐标
+查看 page.find_tables() 的 preview_rows 作为对照
+检查生成 JSON 里哪些 word 串列或漏列
+根据错分情况微调左右边界
+重复运行实验并观察质量报告
+```
+
+所以这些值应该被理解为 GESB SAFF PDF 的 source-specific tuning，而不是通用
+PDF table parser 参数。未来如果要迁移到其他 PDF，这些值应该进入 source profile
+或 layout config，而不是写死在通用逻辑里。
+
+后续可以把这些 magic numbers 命名化，例如：
+
+```python
+COLUMN_LEFT_PADDING = 12.0
+COLUMN_GAP_PADDING = 5.0
+REQUIREMENTS_LABEL_WIDTH = 58.0
+REQUIRED_COLUMN_RIGHT_PADDING = 8.0
+REFERENCE_GAP_PADDING = 2.0
+DES_RIGHT_WIDTH = 80.0
+```
+
+这样调参时更容易看出每个数字的意图，也更容易迁移到其他 source。
 
 `table_data_y_min` 使用：
 
