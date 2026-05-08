@@ -482,6 +482,73 @@ def _extract_rows_from_words(
 如果已经是当前页最后一个 row start，就用 `_next_section_or_page_end()` 找下一节标题
 作为结束位置；找不到时使用 `9999.0` 作为页尾兜底。
 
+`_next_section_or_page_end(words, start_y)` 的职责就是处理这种“当前 row 是页面最后一个
+row start”的情况。它会尝试在当前 row 后面找下一节标题，并把下一节标题的 `y0`
+作为当前 row 的结束位置。
+
+核心代码是：
+
+```python
+def _next_section_or_page_end(words: list[dict[str, Any]], start_y: float) -> float:
+    candidates = []
+    for word in words:
+        if word["y0"] <= start_y:
+            continue
+        if word["x0"] < 80 and re.fullmatch(r"1[01]\.\d+(?:\.\d+)?\.", word["text"]):
+            candidates.append(word["y0"])
+    return min(candidates) if candidates else 9999.0
+```
+
+它的判断规则是：
+
+```text
+只看当前 row start 后面的 word: word["y0"] > start_y
+只看页面左侧的 word: word["x0"] < 80
+只匹配类似 10.1. / 10.2.3. / 11.4. / 11.4.3. 的 section heading
+```
+
+section heading regex 是：
+
+```python
+r"1[01]\.\d+(?:\.\d+)?\."
+```
+
+拆开看：
+
+```text
+1[01]: 只允许 10 或 11 开头
+\.   : 点号
+\d+  : 一段数字
+(?:\.\d+)?: 可选的第二级 .数字
+\.   : 结尾点号
+```
+
+如果找到多个候选 section heading，它返回最靠上的那个：
+
+```python
+return min(candidates)
+```
+
+如果没有找到候选，就返回：
+
+```python
+9999.0
+```
+
+这个值远大于正常页面高度，相当于让后续 row word 收集逻辑把当前 row start 之后的
+剩余 words 都当成这一行的一部分。
+
+这个方法的风险是：
+
+```text
+regex 只认 10.x. 和 11.x.，章节编号变化时会失效
+如果 section heading 被 PyMuPDF 拆成多个 word，可能匹配不到
+如果最后一行后面有 footer、note 或 repeated table header，但没有 section heading，可能被吞进 row
+9999.0 是粗粒度页尾兜底，容易放大最后一行污染
+```
+
+所以它是一个实用但明显 source-specific 的 row boundary fallback。
+
 收集 row words 时使用了两个小 buffer：
 
 ```python
