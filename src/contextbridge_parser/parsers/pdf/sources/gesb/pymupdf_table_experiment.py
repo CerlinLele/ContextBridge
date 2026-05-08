@@ -16,6 +16,10 @@ from typing import Any
 
 import fitz
 
+from contextbridge_parser.parsers.pdf.common.layout import (
+    detect_table_layout,
+    find_header_words,
+)
 from contextbridge_parser.parsers.pdf.common.tools.pymupdf import page_words
 from contextbridge_parser.parsers.pdf.sources.gesb.saff import (
     DEFAULT_OUTPUT_DIR,
@@ -41,6 +45,12 @@ DEFAULT_X_RANGES = {
 }
 
 DEFAULT_TABLE_DATA_Y_MIN = 100.0
+HEADER_ANCHOR_TEXT = "Column"
+HEADER_REQUIRED_TEXTS = ("Field", "Description", "Requirements", "Required", "MIG", "DES")
+HEADER_ANCHOR_X_MAX = 80.0
+HEADER_Y_RANGE = (40.0, 160.0)
+HEADER_SAME_LINE_TOLERANCE = 5.0
+TABLE_DATA_Y_OFFSET = 10.0
 
 
 def extract_pymupdf_tables(source_path: Path) -> dict[str, Any]:
@@ -95,14 +105,21 @@ def _page_words(page: fitz.Page) -> list[dict[str, Any]]:
 
 
 def _detect_table_layout(words: list[dict[str, Any]]) -> dict[str, Any]:
-    header = _find_header_words(words)
-    if not header:
-        return {
-            "x_ranges": DEFAULT_X_RANGES,
-            "table_data_y_min": DEFAULT_TABLE_DATA_Y_MIN,
-            "source": "fallback",
-        }
+    return detect_table_layout(
+        words,
+        default_x_ranges=DEFAULT_X_RANGES,
+        default_table_data_y_min=DEFAULT_TABLE_DATA_Y_MIN,
+        anchor_text=HEADER_ANCHOR_TEXT,
+        required_texts=HEADER_REQUIRED_TEXTS,
+        x_range_builder=_gesb_x_ranges_from_header,
+        anchor_x_max=HEADER_ANCHOR_X_MAX,
+        header_y_range=HEADER_Y_RANGE,
+        same_line_tolerance=HEADER_SAME_LINE_TOLERANCE,
+        table_data_y_offset=TABLE_DATA_Y_OFFSET,
+    )
 
+
+def _gesb_x_ranges_from_header(header: dict[str, dict[str, Any]]) -> dict[str, tuple[float, float]]:
     column_x = header["Column"]["x0"]
     field_x = header["Field"]["x0"]
     description_x = header["Description"]["x0"]
@@ -121,31 +138,18 @@ def _detect_table_layout(words: list[dict[str, Any]]) -> dict[str, Any]:
         "mig_reference": (mig_x - 2.0, des_x - 2.0),
         "des_reference": (des_x - 2.0, des_x + 80.0),
     }
-    return {
-        "x_ranges": x_ranges,
-        "table_data_y_min": header["Column"]["y0"] + 10.0,
-        "source": "header_words",
-    }
+    return x_ranges
 
 
 def _find_header_words(words: list[dict[str, Any]]) -> dict[str, dict[str, Any]] | None:
-    column_candidates = [
-        word
-        for word in words
-        if word["text"] == "Column" and word["x0"] < 80.0 and 40.0 <= word["y0"] <= 160.0
-    ]
-    for column_word in column_candidates:
-        same_line = [
-            word for word in words if abs(word["y0"] - column_word["y0"]) <= 5.0
-        ]
-        header = {"Column": column_word}
-        for text in ("Field", "Description", "Requirements", "Required", "MIG", "DES"):
-            matches = [word for word in same_line if word["text"] == text]
-            if matches:
-                header[text] = matches[0]
-        if all(text in header for text in ("Field", "Description", "Requirements", "Required", "MIG", "DES")):
-            return header
-    return None
+    return find_header_words(
+        words,
+        anchor_text=HEADER_ANCHOR_TEXT,
+        required_texts=HEADER_REQUIRED_TEXTS,
+        anchor_x_max=HEADER_ANCHOR_X_MAX,
+        header_y_range=HEADER_Y_RANGE,
+        same_line_tolerance=HEADER_SAME_LINE_TOLERANCE,
+    )
 
 
 def _find_row_starts(
