@@ -433,6 +433,45 @@ word.text 匹配 \d{1,3}
 
 `_extract_rows_from_words()` 遍历所有 row start。
 
+这个方法的职责是把当前页的 word list 按行切开。它不负责判断 word 属于哪一列，
+也不直接解析 `Requirements`。它只根据 `row_starts` 决定每个业务 row 的纵向范围，
+然后把这个范围内的 words 交给 `_build_row()`。
+
+输入包括：
+
+```text
+page_number: 当前页码
+words: 当前页所有 word，来自 _page_words()
+row_starts: 当前页所有 row start，来自 _find_row_starts()
+layout: 当前页 layout，来自 _detect_table_layout()
+```
+
+核心代码是：
+
+```python
+def _extract_rows_from_words(
+    page_number: int,
+    words: list[dict[str, Any]],
+    row_starts: list[dict[str, Any]],
+    layout: dict[str, Any],
+) -> list[dict[str, Any]]:
+    rows = []
+    for index, row_start in enumerate(row_starts):
+        next_y = (
+            row_starts[index + 1]["y0"]
+            if index + 1 < len(row_starts)
+            else _next_section_or_page_end(words, row_start["y0"])
+        )
+        row_words = [
+            word for word in words if row_start["y0"] - 1 <= word["y0"] < next_y - 0.5
+        ]
+        row = _build_row(page_number, row_start, next_y, row_words, layout["x_ranges"])
+        rows.append(row)
+    return rows
+```
+
+`row_start` 通常是第一列里的数字 word，例如 column number `23`。
+
 每一行的纵向范围是：
 
 ```text
@@ -443,7 +482,47 @@ word.text 匹配 \d{1,3}
 如果已经是当前页最后一个 row start，就用 `_next_section_or_page_end()` 找下一节标题
 作为结束位置；找不到时使用 `9999.0` 作为页尾兜底。
 
-然后它收集这个 y 范围内的所有 words，并交给 `_build_row()` 生成结构化 row。
+收集 row words 时使用了两个小 buffer：
+
+```python
+row_start["y0"] - 1 <= word["y0"] < next_y - 0.5
+```
+
+含义是：
+
+```text
+row_start["y0"] - 1: 起点稍微往上放宽，避免漏掉同一视觉行里 y0 略高的 word
+next_y - 0.5: 终点稍微往上收紧，避免把下一行 row start 附近的 word 吃进来
+```
+
+然后它收集这个 y 范围内的所有 words，并交给 `_build_row()` 生成结构化 row：
+
+```python
+row = _build_row(page_number, row_start, next_y, row_words, layout["x_ranges"])
+```
+
+`_build_row()` 后续会使用 `layout["x_ranges"]` 判断每个 word 属于哪一列。
+
+这个方法依赖几个关键假设：
+
+```text
+每个业务 row 都有一个可靠的 row_start
+row_starts 已经按页面 y 坐标顺序排列
+两个 row_start 之间的 words 都属于前一个业务 row
+最后一个 row 可以通过下一节标题或页尾确定结束位置
+```
+
+它的风险也来自这些假设：
+
+```text
+如果漏掉某个 row_start，上一行可能吞掉这个漏掉行的内容
+如果误识别出一个假的 row_start，真实业务行可能被切断
+如果 section heading 或 repeated table header 落在两个 row_start 之间，可能混入 row
+如果最后一行没有找到合适结束点，可能一直吃到页尾
+```
+
+之前质量检查里看到的 header contamination、section contamination 和部分 missing
+column numbers，都可能和这里的 row boundary 策略有关。
 
 ## Cell Assignment
 
