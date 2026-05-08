@@ -16,6 +16,7 @@ from typing import Any
 
 import fitz
 
+from contextbridge_parser.parsers.pdf.common.tools.pymupdf import page_words
 from contextbridge_parser.parsers.pdf.sources.gesb.saff import (
     DEFAULT_OUTPUT_DIR,
     DEFAULT_SOURCE_PATH,
@@ -90,22 +91,7 @@ def extract_pymupdf_tables(source_path: Path) -> dict[str, Any]:
 
 
 def _page_words(page: fitz.Page) -> list[dict[str, Any]]:
-    words = []
-    for item in page.get_text("words", sort=True):
-        x0, y0, x1, y1, text, block_no, line_no, word_no = item
-        words.append(
-            {
-                "x0": x0,
-                "y0": y0,
-                "x1": x1,
-                "y1": y1,
-                "text": text,
-                "block_no": block_no,
-                "line_no": line_no,
-                "word_no": word_no,
-            }
-        )
-    return words
+    return page_words(page)
 
 
 def _detect_table_layout(words: list[dict[str, Any]]) -> dict[str, Any]:
