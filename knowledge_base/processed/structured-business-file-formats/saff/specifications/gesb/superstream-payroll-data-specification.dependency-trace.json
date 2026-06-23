@@ -1,0 +1,73 @@
+{
+  "trace_schema_version": "1.0",
+  "generated_at": "2026-05-04T14:27:38.131017+00:00",
+  "source": {
+    "path": "knowledge_base\\sources\\structured-business-file-formats\\saff\\specifications\\gesb\\superstream-payroll-data-specification.pdf",
+    "sha256": "a267b9e63f44116e378af526238cd33bf7452a4b126d4c0324a9fd754b96d59e"
+  },
+  "parser": {
+    "name": "gesb-saff-pdf",
+    "version": "0.1.0",
+    "profile": "pdf-table-aware-specification",
+    "module": "contextbridge_parser.parsers.pdf.gesb_saff"
+  },
+  "runtime": {
+    "python": "3.10.0",
+    "implementation": "CPython",
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "dependencies": [
+    {
+      "package": "pypdf",
+      "module": "pypdf",
+      "required": true,
+      "role": "PDF metadata, page text, and image object inspection",
+      "available": true,
+      "version": "6.7.4"
+    },
+    {
+      "package": "pymupdf",
+      "module": "fitz",
+      "required": false,
+      "role": "Recommended future table and coordinate-aware extraction",
+      "available": false,
+      "version": null
+    },
+    {
+      "package": "pdfplumber",
+      "module": "pdfplumber",
+      "required": false,
+      "role": "Recommended future table debugging and visual inspection",
+      "available": false,
+      "version": null
+    },
+    {
+      "package": "docling",
+      "module": "docling",
+      "required": false,
+      "role": "Optional higher-level document conversion benchmark",
+      "available": false,
+      "version": null
+    },
+    {
+      "package": "unstructured",
+      "module": "unstructured",
+      "required": false,
+      "role": "Optional generic PDF partitioning and OCR fallback",
+      "available": false,
+      "version": null
+    },
+    {
+      "package": "pytesseract",
+      "module": "pytesseract",
+      "required": false,
+      "role": "Optional OCR integration for screenshot-heavy pages",
+      "available": false,
+      "version": null
+    }
+  ],
+  "outputs": [
+    "knowledge_base\\processed\\structured-business-file-formats\\saff\\specifications\\gesb\\superstream-payroll-data-specification.parsed.json",
+    "knowledge_base\\processed\\structured-business-file-formats\\saff\\specifications\\gesb\\superstream-payroll-data-specification.dependency-trace.json"
+  ]
+}
