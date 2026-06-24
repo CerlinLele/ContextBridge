@@ -95,7 +95,75 @@
 
 ---
 
-## 7. 建议的 Knowledge Base 构建路径
+## 7. 开发者技术资源
+
+### SuperStream 数据标准
+
+| 资源 | URL | 说明 |
+|------|-----|------|
+| SuperStream Standard - Download | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/superstream | 官方标准文档（需浏览器访问） |
+| SuperStream Contribution Message Format | https://download.asic.gov.au/media/5544449/superstream-contribution-standard.pdf | 贡献消息格式、XBRL 及 XML 模式 |
+| SuperStream Message Specification | https://www.ato.gov.au/Business/SuperStream/In-detail/Message-specifications-and-schemas/ | 消息格式、字段定义、验证规则 |
+| SuperStream XML Schema (.xsd) | https://www.ato.gov.au/Business/SuperStream/In-detail/Schemas/ | XML Schema 定义文件 |
+| SuperStream Implementation Guide | https://www.ato.gov.au/Business/SuperStream/In-detail/Implementation-guide/ | 开发者实现指南、错误处理 |
+
+### STP Phase 2 技术规范
+
+| 资源 | URL | 说明 |
+|------|-----|------|
+| STP Phase 2 Specification | https://www.ato.gov.au/Business/Single-Touch-Payroll/How-to-lodge-STP/Technical-guidance/ | 工资报告数据规范、必填字段 |
+| STP Data Model | https://www.ato.gov.au/Business/Single-Touch-Payroll/How-to-lodge-STP/Data-specifications/ | STP 数据模型和字段定义 |
+| STP Error Codes & Validation | https://www.ato.gov.au/Business/Single-Touch-Payroll/Reconciling-with-your-financial-data/Understanding-validation-errors/ | 验证错误代码、故障排查 |
+| STP Testing Service (TTIS) | https://www.ato.gov.au/Business/Single-Touch-Payroll/How-to-lodge-STP/STP-testing-service/ | 测试环境、沙箱访问 |
+
+### 支付系统集成
+
+| 资源 | URL | 说明 |
+|------|-----|------|
+| NPP Operator - AusPay+ | https://www.auspayplus.com.au/brands/nppa | 快速支付平台运营方 |
+| NPP API Documentation | https://www.rba.gov.au/payments-system/payments-system-board/new-payments-platform.html | 新支付平台规范文档 |
+| BPAY Biller Integration | https://www.bpay.com.au/billers | BPAY 收款方集成指南 |
+
+### Payroll SaaS 平台 API
+
+| 平台 | API 文档 | 说明 |
+|------|---------|------|
+| Xero Payroll API | https://developer.xero.com/documentation/apis/payroll/payroll-au/overview/ | 澳洲薪资 API，包含 superannuation |
+| MYOB | https://myob.com/au/api | MYOB API 集成文档 |
+| KeyPay | https://www.keypay.com/au/support/api | KeyPay 开发者 API |
+| Microkeeper | https://api.microkeeper.com/documentation | Microkeeper API |
+
+### 数据格式与验证
+
+| 资源 | 说明 |
+|------|------|
+| Superannuation Identifier (USI) Standard | 11 位数字编码，用于超级基金识别 |
+| Tax File Number (TFN) Validation | 11 位数字，用于个人和雇主识别 |
+| Australian Business Number (ABN) | 11 位数字，用于商业实体注册 |
+| Bank Account BSB / Account Number | 6 位分行代码 + 可变长账号（最长 10 位） |
+| Date Format | YYYYMMDD（STP 和 SuperStream 标准） |
+
+### 测试与验证
+
+| 资源 | 用途 |
+|------|------|
+| ATO SuperStream Test Environment | SuperStream 消息验证和沙箱测试 |
+| ATO STP Testing Service (TTIS) | STP 报告验证，发现错误和不一致 |
+| Xero Sandbox | Xero API 集成测试 |
+| BPAY Test Codes | BPAY 集成功能测试 |
+
+### 常见集成场景
+
+| 场景 | 技术栈 | 关键资源 |
+|------|--------|---------|
+| 小企业直接向 ATO 缴纳 Super | SuperStream XML 消息 | SuperStream 消息规范、BPAY 或银行转账 |
+| Payroll Provider 通过 DSP 报送 STP | STP API/XML | STP 数据模型、DSP 与 ATO 网关协议 |
+| Accounting Software 集成 Super 清算 | Xero/MYOB API + SuperStream | 各平台 API 文档 + SuperStream 标准 |
+| Multi-employer Super Fund 管理 | SuperStream + SMSF 工具 | SuperStream、Fund 平台 API |
+
+---
+
+## 8. 建议的 Knowledge Base 构建路径
 
 ```
 1. 法规基础 → ATO / Treasury / Legislation
@@ -121,7 +189,18 @@
 
 ## 注意事项
 
+### 一般提示
 - ATO 网站可能对自动抓取返回 403，建议通过浏览器手动查看
 - Wrkr 的 FSG/PDS 和 T&C 文档是了解产品法律边界的重要来源
 - 行业协会网站通常有针对政策变化的分析和 webinar 录播
 - 竞品网站可能有不同的定价模型和功能侧重，有助于理解市场定位
+
+### 开发者特别注意
+- **SuperStream 消息格式**：每次 contribution 必须发送独立的 XML 消息，包含贡献者 TFN、基金 USI、金额、日期等
+- **STP 报告周期**：每个工资周期内必须向 ATO 报送一次，逾期会产生罚款；测试环境(TTIS)可先验证报告有效性
+- **日期格式**：SuperStream 和 STP 都使用 YYYYMMDD 格式，需严格校验以避免解析错误
+- **错误处理**：ATO 返回的错误代码包括验证错误、业务规则错误、系统错误三类，需区分处理
+- **支付方式**：SuperStream 可通过 BPAY、银行转账、NPP 等方式支付；不同方式的确认时间和对账逻辑不同
+- **API 限流**：Xero/MYOB/KeyPay 等平台都有 API 速率限制，高频操作需实现指数退避重试策略
+- **测试数据**：使用 ATO 提供的虚拟 TFN/USI 进行测试，生产环境使用真实数据前需完整验证
+- **文档版本**：ATO 和平台方定期更新 API/规范，集成代码需定期检查更新公告
