@@ -37,7 +37,7 @@
 |------|-----|------|
 | ATO - Super for Employers | https://www.ato.gov.au/businesses-and-organisations/super-for-employers | 雇主 super 义务总览 |
 | ATO - Payday Super | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/payday-super | Payday Super 官方指南（注意：可能需浏览器访问） |
-| ATO - SuperStream | https://www.ato.gov.au/individuals-and-families/super-for-individuals-and-families/self-managed-super-funds-smsf | SuperStream 标准和合规要求 |
+| ATO - SuperStream | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/superstream | SuperStream 标准和合规要求 |
 | ATO - Single Touch Payroll | https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/single-touch-payroll | STP Phase 2 规范 |
 | Treasury - Superannuation | https://treasury.gov.au/superannuation | 超级年金政策改革、立法文件 |
 | APRA - Superannuation | https://www.apra.gov.au/superannuation | 超级基金监管、数据标准、报告要求 |
@@ -49,7 +49,7 @@
 
 | 资源 | URL | 内容 |
 |------|-----|------|
-| AIST (Australian Institute of Superannuation Trustees) | https://treasury.gov.au/sites/default/files/2023-03/c2023-379612-australian_institute_of_superannuation_trustees.pdf | 超级年金行业观点、政策分析 |
+| AIST (Australian Institute of Superannuation Trustees) | https://www.aist.asn.au | 超级年金行业观点、政策分析 |
 | ASFA (Association of Superannuation Funds of Australia) | https://www.superannuation.asn.au | 行业研究、政策建议、统计数据 |
 | Australian Payroll Association | https://www.austpayroll.com.au | Payroll 实务、合规指南 |
 | Institute of Certified Bookkeepers (ICB) | https://www.icb.org.au | Bookkeeper 专业资源（Wrkr 被 ICB 推荐） |
@@ -64,7 +64,7 @@
 | SuperChoice | https://www.superchoice.com.au | 大型清算所，服务大企业和基金 |
 | Beam (formerly QuickSuper by Westpac) | https://www.beamconnect.com.au | 银行背景的 super 清算平台 |
 | ATO Small Business SCH (已关闭) | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/small-business-superannuation-clearing-house | 此前免费政府清算所，2026年7月关闭 |
-| Xero (内置 super) | https://www.myob.com/au/features/payroll-software | 会计软件内置 payroll + super |
+| Xero (内置 super) | https://www.xero.com/au/features/payroll/ | 会计软件内置 payroll + super |
 | MYOB (内置 super) | https://www.myob.com/au/accounting-software/payroll | 会计软件内置 payroll + super |
 | KeyPay / Employment Hero | https://www.keypay.com.au/ | Payroll 平台带 super 处理 |
 
@@ -84,54 +84,58 @@
 
 ---
 
-## 6. 技术标准与规范
-
-| 资源 | URL | 内容 |
-|------|-----|------|
-| SuperStream Data Standard | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/superstream | 数据交换标准，contribution 消息格式 |
-| STP Phase 2 Reporting | https://www.ato.gov.au/businesses-and-organisations/single-touch-payroll | 工资报告数据规范 |
-| NPP (New Payments Platform) | https://www.nppa.com.au | 快速支付基础设施，Wrkr 未来可能支持 |
-| BPAY | https://www.bpay.com.au | 支付方式之一的技术规范 |
-
----
-
-## 7. 开发者技术资源
+## 6. 开发者技术资源
 
 ### SuperStream 数据标准
 
 | 资源 | URL | 说明 |
 |------|-----|------|
-| SuperStream Standard - Download | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/superstream | 官方标准文档（需浏览器访问） |
-| SuperStream Contribution Message Format | https://download.asic.gov.au/media/5544449/superstream-contribution-standard.pdf | 贡献消息格式、XBRL 及 XML 模式 |
-| SuperStream Message Specification | https://www.ato.gov.au/Business/SuperStream/In-detail/Message-specifications-and-schemas/ | 消息格式、字段定义、验证规则 |
-| SuperStream XML Schema (.xsd) | https://www.ato.gov.au/Business/SuperStream/In-detail/Schemas/ | XML Schema 定义文件 |
-| SuperStream Implementation Guide | https://www.ato.gov.au/Business/SuperStream/In-detail/Implementation-guide/ | 开发者实现指南、错误处理 |
+| SuperStream Standard (主页) | https://softwaredevelopers.ato.gov.au/SuperStreamStandard | SuperStream 标准官方入口、全部技术资源索引 |
+| Contribution Standard v3.0 | https://softwaredevelopers.ato.gov.au/ContributionV3 | 最新贡献消息标准 v3 |
+| Contribution Standard v2.0 | https://softwaredevelopers.ato.gov.au/Contribution | 贡献消息标准 v2 |
+| Rollover Standard v3.0 | https://softwaredevelopers.ato.gov.au/rolloverV3 | 最新转移消息标准 v3 |
+| Rollover Standard v2.0 | https://softwaredevelopers.ato.gov.au/rollovers | 转移消息标准 v2 |
+| Business to Government (B2G) | https://softwaredevelopers.ato.gov.au/B2G | SuperTICK3、MAAS、MATS 等 B2G 报告 |
+| SuperStream 标准技术委员会 (SSTC) | https://softwaredevelopers.ato.gov.au/SSTC | 标准制定工作组信息 |
+
+#### SuperStream 标准文档 (Schedules)
+
+| 文档 | 说明 |
+|------|------|
+| [Schedule 2 - Terms and Definitions v2.1 (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/2025-01/Schedule_2_Terms_and_Definitions_v2.1.pdf) | 术语和定义 |
+| [Schedule 3 - Payment Methods v2.0 (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/resource-attachments/Schedule_3_Payment_Methods_v2%200.pdf) | 支付方式规范 |
+| [Schedule 4a - Contributions MIG v2.0 (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/resource-attachments/Schedule_4a_ContributionsMIG_v2.0_Apr2017.pdf) | 贡献消息实现指南 |
+| [Schedule 4b - Rollover MIG v2.1 (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/resource-attachments/Schedule_4b_Rollover_MIG_v2.1_Nov17.pdf) | 转移消息实现指南 |
+| [Schedule 5 - Message Orchestration (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/resource-attachments/Schedule_5_Message_Orchestration_and_Profiles_v2.0_Apr2017.pdf) | 消息编排和配置文件 |
+| [Schedule 6 - Error Code Management (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/resource-attachments/Schedule_6_Error_Code_Management_v2.0_Apr2017.pdf) | 错误代码管理 |
+| [SuperStream Guidance Notes (PDF)](https://softwaredevelopers.ato.gov.au/sites/default/files/resource-attachments/SuperStreamGuidanceNotesStatus_19Aug16.pdf) | SuperStream 指南说明 |
 
 ### STP Phase 2 技术规范
 
 | 资源 | URL | 说明 |
 |------|-----|------|
-| STP Phase 2 Specification | https://www.ato.gov.au/Business/Single-Touch-Payroll/How-to-lodge-STP/Technical-guidance/ | 工资报告数据规范、必填字段 |
-| STP Data Model | https://www.ato.gov.au/Business/Single-Touch-Payroll/How-to-lodge-STP/Data-specifications/ | STP 数据模型和字段定义 |
-| STP Error Codes & Validation | https://www.ato.gov.au/Business/Single-Touch-Payroll/Reconciling-with-your-financial-data/Understanding-validation-errors/ | 验证错误代码、故障排查 |
-| STP Testing Service (TTIS) | https://www.ato.gov.au/Business/Single-Touch-Payroll/How-to-lodge-STP/STP-testing-service/ | 测试环境、沙箱访问 |
+| STP Phase 2 Specification | https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/single-touch-payroll | STP Phase 2 官方入口 |
+| Electronic Portability Form (EPF) | https://softwaredevelopers.ato.gov.au/EPF | 电子可携带表单标准 |
+| Superannuation Technical Artefacts | https://www.sbr.gov.au/digital-service-providers/developer-tools/australian-taxation-office-ato/superannuation-data-and-reporting-standards/superannuation-spr | SBR 托管的 super 技术产物 |
+| SuperStream Validation Services | https://www.ato.gov.au/Super/SuperStream/In-detail/Validation-services/ | SuperStream 验证服务 |
+| Gateway Governance | https://www.ato.gov.au/Super/SuperStream/In-detail/Gateway-governance/ | 网关治理规范 |
 
 ### 支付系统集成
 
 | 资源 | URL | 说明 |
 |------|-----|------|
-| NPP Operator - AusPay+ | https://www.auspayplus.com.au/brands/nppa | 快速支付平台运营方 |
-| NPP API Documentation | https://www.rba.gov.au/payments-system/payments-system-board/new-payments-platform.html | 新支付平台规范文档 |
-| BPAY Biller Integration | https://www.bpay.com.au/billers | BPAY 收款方集成指南 |
+| NPP - New Payments Platform | https://www.nppa.com.au | 新支付平台官网（由 NPP Australia 运营） |
+| NPP Overview (RBA) | https://www.rba.gov.au/payments-and-infrastructure/new-payments-platform/ | 澳储行关于 NPP 的说明 |
+| BPAY | https://www.bpay.com.au | BPAY 官网（支付方式之一） |
 
 ### Payroll SaaS 平台 API
 
 | 平台 | API 文档 | 说明 |
 |------|---------|------|
-| Xero Payroll API | https://developer.xero.com/documentation/apis/payroll/payroll-au/overview/ | 澳洲薪资 API，包含 superannuation |
-| MYOB | https://myob.com/au/api | MYOB API 集成文档 |
-| KeyPay | https://www.keypay.com/au/support/api | KeyPay 开发者 API |
-| Microkeeper | https://api.microkeeper.com/documentation | Microkeeper API |
+| Xero Payroll API | https://developer.xero.com/documentation/api/payroll-au/overview | 澳洲薪资 API，包含 superannuation |
+| MYOB API | https://developer.myob.com/api/myob-business-api/api-overview/ | MYOB Business API 文档 |
+| KeyPay API | https://keypay.github.io/api-docs/ | KeyPay 开发者 API 文档 |
+| Microkeeper | https://www.microkeeper.com.au | Microkeeper 官网（API 需联系获取） |
 
 ### 数据格式与验证
 
