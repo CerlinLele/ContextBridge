@@ -11,9 +11,9 @@
 | 产品主页 | https://www.wrkr.com.au/payday-super-clearing-house | 产品功能、定位、FAQ |
 | 定价页面 | https://www.wrkr.com.au/pricing | 按员工人数定价，免费试用至 2026/7/31 |
 | 资源中心 | https://www.wrkr.com.au/resources | 博客、指南、产品更新、案例研究 |
-| Onboarding Compliance | https://www.wrkr.com.au/onboarding-compliance | 员工入职合规功能 |
-| STP Reporting | https://www.wrkr.com.au/stp-reporting | Single Touch Payroll 报告功能 |
-| SMSF Hub | https://www.wrkr.com.au/smsf-hub | 自管超级基金管理 |
+| Onboarding Compliance | https://www.wrkr.com.au/employee-onboarding-compliance | 员工入职合规功能 |
+| STP Reporting | https://www.wrkr.com.au/single-touch-payroll | Single Touch Payroll 报告功能 |
+| SMSF Hub | https://www.wrkr.com.au/smsf-compliance | 自管超级基金管理 |
 | Combined FSG & PDS | https://www.wrkr.com.au/ (Legal 区域) | 金融服务指南和产品披露声明 |
 | Target Market Determination | https://www.wrkr.com.au/ (Legal 区域) | 目标市场确认文件 |
 
@@ -36,9 +36,9 @@
 | 资源 | URL | 内容 |
 |------|-----|------|
 | ATO - Super for Employers | https://www.ato.gov.au/businesses-and-organisations/super-for-employers | 雇主 super 义务总览 |
-| ATO - Payday Super | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/payday-super | Payday Super 官方指南（注意：可能需浏览器访问） |
-| ATO - SuperStream | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/superstream | SuperStream 标准和合规要求 |
-| ATO - Single Touch Payroll | https://www.ato.gov.au/businesses-and-organisations/single-touch-payroll | STP Phase 2 规范 |
+| ATO - Payday Super | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/payday-super | Payday Super 官方指南（注意：可能需浏览器访问） |
+| ATO - SuperStream | https://www.ato.gov.au/individuals-and-families/super-for-individuals-and-families/self-managed-super-funds-smsf | SuperStream 标准和合规要求 |
+| ATO - Single Touch Payroll | https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/single-touch-payroll | STP Phase 2 规范 |
 | Treasury - Superannuation | https://treasury.gov.au/superannuation | 超级年金政策改革、立法文件 |
 | APRA - Superannuation | https://www.apra.gov.au/superannuation | 超级基金监管、数据标准、报告要求 |
 | Federal Register of Legislation | https://www.legislation.gov.au | Superannuation Guarantee 相关法案原文 |
@@ -49,7 +49,7 @@
 
 | 资源 | URL | 内容 |
 |------|-----|------|
-| AIST (Australian Institute of Superannuation Trustees) | https://www.aist.asn.au | 超级年金行业观点、政策分析 |
+| AIST (Australian Institute of Superannuation Trustees) | https://treasury.gov.au/sites/default/files/2023-03/c2023-379612-australian_institute_of_superannuation_trustees.pdf | 超级年金行业观点、政策分析 |
 | ASFA (Association of Superannuation Funds of Australia) | https://www.superannuation.asn.au | 行业研究、政策建议、统计数据 |
 | Australian Payroll Association | https://www.austpayroll.com.au | Payroll 实务、合规指南 |
 | Institute of Certified Bookkeepers (ICB) | https://www.icb.org.au | Bookkeeper 专业资源（Wrkr 被 ICB 推荐） |
@@ -64,9 +64,9 @@
 | SuperChoice | https://www.superchoice.com.au | 大型清算所，服务大企业和基金 |
 | Beam (formerly QuickSuper by Westpac) | https://www.beamconnect.com.au | 银行背景的 super 清算平台 |
 | ATO Small Business SCH (已关闭) | https://www.ato.gov.au/businesses-and-organisations/super-for-employers/paying-super-contributions/how-to-pay-super/small-business-superannuation-clearing-house | 此前免费政府清算所，2026年7月关闭 |
-| Xero (内置 super) | https://www.xero.com/au/accounting-software/payroll/ | 会计软件内置 payroll + super |
+| Xero (内置 super) | https://www.myob.com/au/features/payroll-software | 会计软件内置 payroll + super |
 | MYOB (内置 super) | https://www.myob.com/au/accounting-software/payroll | 会计软件内置 payroll + super |
-| KeyPay / Employment Hero | https://www.employmenthero.com/au/ | Payroll 平台带 super 处理 |
+| KeyPay / Employment Hero | https://www.keypay.com.au/ | Payroll 平台带 super 处理 |
 
 ---
 
