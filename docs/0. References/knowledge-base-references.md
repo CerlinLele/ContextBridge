@@ -49,7 +49,7 @@
 
 | 资源 | URL | 内容 |
 |------|-----|------|
-| AIST (Australian Institute of Superannuation Trustees) | https://www.aist.asn.au | 超级年金行业观点、政策分析 |
+| Super Members Council (SMC) | https://smcaustralia.com | 超级年金行业观点、政策分析（AIST 和 ISA 于 2024 年合并后的新组织） |
 | ASFA (Association of Superannuation Funds of Australia) | https://www.superannuation.asn.au | 行业研究、政策建议、统计数据 |
 | Australian Payroll Association | https://www.austpayroll.com.au | Payroll 实务、合规指南 |
 | Institute of Certified Bookkeepers (ICB) | https://www.icb.org.au | Bookkeeper 专业资源（Wrkr 被 ICB 推荐） |
@@ -173,7 +173,7 @@
 1. 法规基础 → ATO / Treasury / Legislation
    理解 Payday Super 的法律要求和时间线
 
-2. 行业背景 → ASFA / AIST / CPA
+2. 行业背景 → ASFA / SMC / CPA
    理解超级年金行业生态和参与者
 
 3. 产品深度 → Wrkr 官方网站 + 博客
